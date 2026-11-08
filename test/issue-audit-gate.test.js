@@ -1299,6 +1299,22 @@ describe('diagnoza odrzucenia komendy przez author_association', () => {
     assert.match(reconcile(claudeIssue({ comments: [missing] })).reason, /author_association: brak/);
   });
 
+  test('podpowiedź tylko dla komend, które zmiana samego association by przyjęła (edytowana, zła strona, bez podpisu: bez podpowiedzi)', () => {
+    const edited = gptVerdict('ok', LATER, { authorAssociation: 'CONTRIBUTOR', lastEditedAt: LATEST });
+    const ownSide = cmd('ok', LATER, { authorAssociation: 'CONTRIBUTOR' });
+    const unsigned = gptVerdict('ok', LATER, { authorAssociation: 'CONTRIBUTOR', body: ['/audit-ok', '', 'Uzasadnienie.'].join(String.fromCharCode(10)) });
+    const viaGh = gptVerdict('ok', LATER, { authorAssociation: 'CONTRIBUTOR', app: '' });
+    for (const comment of [edited, ownSide, unsigned, viaGh]) {
+      const result = reconcile(claudeIssue({ comments: [comment] }));
+      assert.equal(result.label, AUDIT_PENDING);
+      assert.doesNotMatch(result.reason, /pominięto|członkostwo/);
+    }
+    // kontrola: ta sama komenda bez wad poza association daje podpowiedź, a po zmianie association na MEMBER rozstrzyga
+    const clean = gptVerdict('ok', LATER, { authorAssociation: 'CONTRIBUTOR' });
+    assert.match(reconcile(claudeIssue({ comments: [clean] })).reason, /pominięto 1/);
+    assert.equal(reconcile(claudeIssue({ comments: [Object.assign({}, clean, { authorAssociation: 'MEMBER' })] })).label, AUDIT_OK);
+  });
+
   test('wiele odrzuconych komend: liczba i unikalne wartości', () => {
     const comments = [
       gptVerdict('ok', LATER, { authorAssociation: 'CONTRIBUTOR' }),

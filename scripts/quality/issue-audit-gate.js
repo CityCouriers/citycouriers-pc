@@ -157,9 +157,15 @@ function latestDecision(comments, barrier, cfg, reviewer) {
  * `CONTRIBUTOR`, mimo że webhook i token członka pokazują `MEMBER`. Listy dozwolonych nie rozszerzamy: `CONTRIBUTOR`
  * to także każdy, kogo PR został scalony, a podpis strony bez aplikacji (Claude Code przez `gh`) da się podrobić.
  */
-function rejectedByAssociation(comments, barrier, cfg) {
+function rejectedByAssociation(comments, barrier, cfg, reviewer) {
+  if (!reviewer) return [];
+  // Te same warunki co w latestDecision(), poza `author_association`: liczymy tylko komendy, które po zmianie samej
+  // wartości association byłyby przyjęte. Inaczej podpowiedź „ustaw członkostwo jako publiczne” prowadziłaby w ślepy zaułek
+  // dla komentarza edytowanego, od złej strony albo bez podpisu.
   return (comments || [])
     .filter(c => parseCommand(c.body, cfg))
+    .filter(c => !c.lastEditedAt)
+    .filter(c => commentSide(c) === reviewer)
     .filter(c => c.createdAt > barrier)
     .filter(c => !cfg.commandAssociations.includes(c.authorAssociation))
     .map(c => String(c.authorAssociation || 'brak'));
@@ -287,7 +293,7 @@ function reconcile(input, config = {}) {
     return { action: 'none', label: current, reason: 'issue nieobjęta bramką (brak backfillu)' };
   }
 
-  const rejected = decision ? [] : rejectedByAssociation(input.comments, barrier, cfg);
+  const rejected = decision ? [] : rejectedByAssociation(input.comments, barrier, cfg, reviewerOf(author.side));
   return settle(wantedState(decision, author, barrier, cfg, rejected), present, current);
 }
 
