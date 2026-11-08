@@ -35,9 +35,8 @@ on:
   issue_comment:
     types: [created, edited, deleted]
 
-permissions:
-  contents: read
-  issues: write
+# Uprawnienia nadawane na poziomie jobu (najmniejsze potrzebne).
+permissions: {}
 
 # Nie anulujemy runów w locie: reconciler ma dokończyć zapis etykiety.
 concurrency:
@@ -46,6 +45,10 @@ concurrency:
 
 jobs:
   reconcile:
+    name: Reconcile audit state
+    permissions:
+      contents: read  # sparse checkout skryptów bramki
+      issues: write  # etykiety audit:*, triage i komentarz-znacznik
     # GitHub wysyła `issue_comment` także dla pull requestów — bez tego guarda
     # `/audit-ok` napisane w PR manipulowałoby etykietami PR-a.
     #
@@ -65,7 +68,8 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_REPOSITORY: ${{ github.repository }}
       ISSUE: ${{ github.event.issue.number }}
-      # Moment uruchomienia bramki W TYM repozytorium (północ UTC w dniu założenia repo, obejmuje zgłoszenia planu bramek w zakresie; nie cofaj tej daty, bo to cichy backfill).
+      # Moment uruchomienia bramki W TYM repozytorium (północ UTC w dniu założenia repo; obejmuje zgłoszenia
+      # planu bramek w zakresie). Nie cofaj tej daty, bo to cichy backfill.
       # Trzymamy go w workflow, a nie w skrypcie, bo ten sam skrypt obsługuje też
       # inne repozytoria, które weszły do bramki innego dnia. Cofnięcie tej daty
       # zrobiłoby cichy backfill całego archiwum.
@@ -78,16 +82,17 @@ jobs:
       TRIAGE_REQUIRED: "P,T"
     steps:
       - name: Checkout gate script
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           sparse-checkout: |
             scripts/quality/issue-audit-gate.js
             scripts/quality/issue-audit-sides.js
             scripts/quality/issue-audit-fetch.js
           sparse-checkout-cone-mode: false
+          persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22
 
@@ -110,4 +115,8 @@ jobs:
           steps.gate.outputs.previous != 'audit:pending'
         run: |
           gh issue comment "$ISSUE" --repo "$GITHUB_REPOSITORY" --body \
-            "Stan audytu cofnięty z \`${{ steps.gate.outputs.previous }}\` do \`audit:pending\`: po rozstrzygnięciu zmieniła się treść issue, jej autorstwo (podpis, \`by:agent\`) albo komentarz z werdyktem (edycja lub usunięcie). Opisz w komentarzu, co się zmieniło — sama etykieta tego nie powie."
+            "Stan audytu cofnięty z \`${STEPS_GATE_OUTPUTS_PREVIOUS}\` do \`audit:pending\`: po rozstrzygnięciu zmieniła się \
+          treść issue, jej autorstwo (podpis, \`by:agent\`) albo komentarz z werdyktem (edycja lub usunięcie). \
+          Opisz w komentarzu, co się zmieniło — sama etykieta tego nie powie."
+        env:
+          STEPS_GATE_OUTPUTS_PREVIOUS: ${{ steps.gate.outputs.previous }}

@@ -68,7 +68,9 @@ const RULES = [
     match: path => path === 'LICENSE' || hasExtension(path, ['.md']) || (path.startsWith('docs/') && hasExtension(path, DOCS_EXTENSIONS)),
   },
   // Skan prywatności czyta listę plików repo przez git, więc zmiana ignorowanych plików go dotyczy.
-  { name: 'git-meta', gates: ['privacy'], match: path => path === '.gitignore' || path === '.gitattributes' },
+  // `.yamllint.yaml` konfiguruje bramkę yamllint, której w hooku jeszcze nie ma (zgłoszenie o yamllint); do czasu jej
+  // wdrożenia zmiana konfiguracji dotyczy tylko skanu prywatności.
+  { name: 'git-meta', gates: ['privacy'], match: path => ['.gitignore', '.gitattributes', '.yamllint.yaml'].includes(path) },
 ];
 
 /** Czy ścieżka z gita jest bezpieczna do klasyfikacji (nie ufamy dziwnym ścieżkom). */

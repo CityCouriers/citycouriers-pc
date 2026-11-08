@@ -25,6 +25,8 @@ describe('tabela: plik → bramki', () => {
     ['CHANGELOG.md', ['privacy']],
     ['LICENSE', ['privacy']],
     ['.gitignore', ['privacy']],
+    ['.yamllint.yaml', ['privacy']],
+    ['.github/zizmor.yml', ['privacy', 'process']],
     ['src/Application.php', ['privacy', 'lint', 'stan', 'smells', 'test', 'negative']],
     ['bin/pc', ['privacy', 'lint', 'stan', 'smells', 'test', 'negative']],
     ['composer.json', ['privacy', 'lint', 'stan', 'smells', 'test', 'negative']],

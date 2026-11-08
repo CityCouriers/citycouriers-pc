@@ -11,6 +11,14 @@ Pełny opis: [docs/wydania.md](docs/wydania.md).
 - Repozytorium nazywa się `pc` (wcześniej `citycouriers-pc`), zgodnie z konwencją krótkich nazw repozytoriów CityCouriers. Nazwa pakietu Composera (`citycouriers/pc`) bez zmian. Stary adres przekierowuje.
 - Start bramki audytu zgłoszeń: 2026-11-08T00:00:00Z.
 
+### Fixed
+
+- Workflow GitHub Actions po przeglądzie narzędziami (actionlint, zizmor w trybie pedantic, yamllint, check-jsonschema,
+  pinact, ShellCheck): `persist-credentials: false` w checkoutach, akcje przypięte do SHA z komentarzem wersji,
+  uprawnienia na poziomie jobów z uzasadnieniem, nazwy jobów, `concurrency` dla `pr-title` i `Release`, cooldown
+  Dependabota, brak `template-injection` w `issue-audit.yml`, `cd ... || exit 1` w skryptach CI. Konfiguracje:
+  `.yamllint.yaml`, `.github/zizmor.yml` (jeden wyjątek `dangerous-triggers` z uzasadnieniem).
+
 ### Added
 
 - Zakres bramek hooka pre-commit (`scripts/quality/hook-scope.js`): commit z samą dokumentacją nie uruchamia PHPStan, PHPMD

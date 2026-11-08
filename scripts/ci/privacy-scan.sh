@@ -4,7 +4,7 @@
 # ręcznego przeglądu pochodzenia i licencji przenoszonego kodu.
 set -uo pipefail
 
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../.." || exit 1
 
 self="scripts/ci/privacy-scan.sh"
 status=0
