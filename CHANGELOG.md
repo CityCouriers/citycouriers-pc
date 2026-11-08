@@ -13,6 +13,9 @@ Pełny opis: [docs/wydania.md](docs/wydania.md).
 
 ### Added
 
+- Zakres bramek hooka pre-commit (`scripts/quality/hook-scope.js`): commit z samą dokumentacją nie uruchamia PHPStan, PHPMD
+  ani testów. Allowlista zwolnień, fail-closed, widoczna lista pominiętych, `PC_HOOK_SCOPE=all`. Zasady i wyzwalacze
+  bramek: `docs/bramki.md`.
 - Proces repozytorium jak w pozostałych repo CityCouriers: etykiety `P0`-`P4`, `T1`-`T3`, `area:*` (`.github/labels.json`,
   workflow `Sync GitHub labels`), triage i bramka audytu zgłoszeń (`issue-audit`), `pr-title`, szablony zgłoszeń i PR,
   job zbiorczy `quality-gate` (zastępuje `ci-gate`), gitleaks z przypiętą wersją i sumą SHA-256, testy skryptów procesu

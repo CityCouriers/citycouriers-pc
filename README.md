@@ -59,7 +59,7 @@ Przykład `pc.json`:
 ```bash
 composer install
 composer hooks    # włącza hook pre-commit
-composer check    # Pint, PHPStan, PHPMD, testy, kontrole ujemne
+composer check    # Pint, PHPStan, PHPMD, testy, kontrole ujemne (zawsze pełny zestaw; hook skraca zakres do typów plików)
 npm test          # testy skryptów procesu (bramka audytu, etykiety, quality-gate)
 composer privacy  # skan ścieżek maszyn i adresów e-mail
 ```

@@ -28,7 +28,7 @@ bramki, gdy jest w zakresie i zostało zmienione po starcie, albo gdy recenzent 
 
 - Do `main` wchodzi się przez PR (ochrona gałęzi). Wymagane kontrole: **`quality-gate`** i **`pr-title`**.
 - Tytuł PR to Conventional Commits z tematem małą literą. Squash przenosi go do historii `main`.
-- Commit przez hook (`composer hooks`), bez `--no-verify`.
+- Commit przez hook (`composer hooks`), bez `--no-verify`. Hook uruchamia bramki dla typów zmienionych plików (`docs/bramki.md`, „Zakres plików bramki”); `PC_HOOK_SCOPE=all` wymusza pełny zestaw.
 - PR w Draft do czasu zielonego CI na bieżącym HEAD. Po „Ready for review” workflow startuje od nowa.
 
 ## Kontrole CI

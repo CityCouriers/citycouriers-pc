@@ -17,6 +17,7 @@ skanu prywatności, gitleaks i testów skryptów procesu.
 <!-- Odhacz z krótkim potwierdzeniem albo N/A z powodem. -->
 
 - [ ] **Testy:** `composer check` i `npm test` zielone; nowe zachowanie ma test pozytywny i negatywny
+- [ ] **Zakres plików:** nowa lub zmieniona bramka ma opisane wyzwalacze, pomijane typy plików, pliki konfiguracji i test zakresu (`docs/bramki.md`, sekcja „Zakres plików bramki”), albo N/A
 - [ ] **Kontrola ujemna:** nowa lub zmieniona bramka ma plik z błędem w `tests/Fixtures/negative/`, który ją zatrzymuje, albo N/A
 - [ ] **Bezpieczeństwo i prywatność:** `composer privacy` zielony; brak kluczy, ścieżek z maszyn, adresów e-mail i danych z prywatnych repo, albo N/A
 - [ ] **SemVer:** wpis w `CHANGELOG.md` z klasyfikacją wg `docs/wydania.md` (nowa bramka blokująca lub ostrzejsza reguła to major), albo N/A
