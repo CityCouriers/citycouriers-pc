@@ -1,7 +1,8 @@
 name: CI
 
 # Kontrole repo citycouriers-pc. Repo jest publiczne, więc minuty Actions na standardowych runnerach są darmowe.
-# Każdy job kontrolny jest wymieniony w `ci-gate` (jedyna wymagana kontrola na `main`). Dodając job, dopisz go do `needs`.
+# Każdy job kontrolny jest wymieniony w `quality-gate` (wymagana kontrola na `main`, razem z `pr-title`). Dodając job,
+# dopisz go do `needs` i do scripts/quality/quality-gate.js (test pilnuje zgodności).
 # Kontrole ujemne (scripts/ci/negative-controls.sh i krok w secret-scan) dowodzą, że bramki zatrzymują znany błąd:
 # zielone CI samo tego nie pokazuje.
 
@@ -114,43 +115,82 @@ jobs:
       - uses: actions/checkout@v7
       - run: bash scripts/ci/privacy-scan.sh
 
+  process-tests:
+    name: Testy skryptów procesu
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      # Bramka audytu zgłoszeń, etykiety i job zbiorczy quality-gate (zob. docs/proces.md).
+      - run: npm test
+
   secret-scan:
     name: Skan sekretów (gitleaks)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      # Obraz z oficjalnego repo gitleaks, przypięty do wersji. Akcja gitleaks-action wymaga licencji dla organizacji, więc używamy obrazu.
-      GITLEAKS_IMAGE: zricethezav/gitleaks:v8.28.0
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout full history
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - name: Skan całej historii
-        run: docker run --rm -v "$PWD:/repo" "$GITLEAKS_IMAGE" git /repo --redact --verbose
+
+      # gitleaks-action w organizacji wymaga licencji (GITLEAKS_LICENSE); sam skaner jej nie wymaga.
+      # Wersja i SHA-256 jak w pozostałych repozytoriach CityCouriers (zgodne z gitleaks_8.30.1_checksums.txt wydania).
+      - name: Install gitleaks
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+          GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/$archive"
+          echo "$GITLEAKS_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" gitleaks
+
+      - name: Gitleaks
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Bez --first-parent i --no-merges, bo pomijają commity boczne i zmiany w samym merge'u.
+          # --diff-merges=first-parent pokazuje merge wobec pierwszego rodzica, także rozwiązanie konfliktu.
+          scope=--all
+          if [ "$EVENT_NAME" = pull_request ]; then
+            scope="${BASE_SHA}..${HEAD_SHA}"
+          fi
+          "$RUNNER_TEMP/gitleaks" git --redact --no-banner --log-opts="--diff-merges=first-parent $scope" .
+
       - name: Kontrola ujemna, skaner musi wykryć sztuczny token
         run: |
           set -u
           scan_dir="$(mktemp -d)"
-          chmod 755 "$scan_dir"
           printf 'token = "github_pat_%s"\n' "$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 82)" > "$scan_dir/fake.env"
-          chmod 644 "$scan_dir/fake.env"
-          if docker run --rm -v "$scan_dir:/scan" "$GITLEAKS_IMAGE" dir /scan --redact --no-banner; then
+          if "$RUNNER_TEMP/gitleaks" dir "$scan_dir" --redact --no-banner; then
             echo "BŁĄD: gitleaks przepuścił sztuczny token. Skaner nie działa."
             exit 1
           fi
           echo "OK: gitleaks zatrzymał sztuczny token."
 
-  ci-gate:
-    name: ci-gate
-    if: ${{ always() }}
-    needs: [composer, pint, phpstan, phpmd, tests, negative-controls, privacy, secret-scan]
+  # Job zbiorczy: jedna kontrola wymagana przez `main` (razem z `pr-title`). Zielony tylko, gdy każdy job z listy
+  # wymaganych ma wynik `success` (pominięty, anulowany i brakujący dają czerwony); lista jest w
+  # scripts/quality/quality-gate.js, a test pilnuje jej zgodności z tym plikiem. `needs` działa tylko w obrębie tego
+  # workflow, więc nowe joby kontrolne dopisujemy tutaj i w skrypcie.
+  quality-gate:
+    name: quality-gate
+    if: always()
+    needs: [composer, pint, phpstan, phpmd, tests, negative-controls, privacy, secret-scan, process-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: Wszystkie kontrole muszą być zielone
-        run: |
-          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}" = "true" ]; then
-            echo "Co najmniej jedna kontrola nie przeszła."
-            exit 1
-          fi
-          echo "Wszystkie kontrole zielone."
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Evaluate required jobs
+        env:
+          NEEDS_JSON: ${{ toJSON(needs) }}
+          DRAFT: ${{ github.event.pull_request.draft }}
+        run: node scripts/quality/quality-gate.js

@@ -7,6 +7,7 @@ powstały, trafiają tu razem z kodem (zob. [plan przeniesienia](plan-przeniesie
 | --- | --- |
 | [bramki.md](bramki.md) | Kontrakt bramek: lista, tryby, kontrola ujemna |
 | [konfiguracja.md](konfiguracja.md) | Plik `pc.json`, moduły, instalacja w projekcie z niższym PHP |
+| [proces.md](proces.md) | Zgłoszenia, etykiety P/T, audyt, PR i kontrole CI |
 | [wydania.md](wydania.md) | SemVer dla bramek, proces wydania, tag próbny |
 | [plan-przeniesienia.md](plan-przeniesienia.md) | Fazy przenoszenia bramek do paczki |
 

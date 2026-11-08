@@ -1,0 +1,3 @@
+# Puste zgłoszenia wyłączone w interfejsie WWW; zgłoszenia z CLI szablonu nie wczytują,
+# więc pola i etykiety sprawdza autor (a bramka audytu issue-audit), nie sam szablon.
+blank_issues_enabled: false

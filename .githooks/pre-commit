@@ -11,3 +11,9 @@ composer smells
 composer test
 composer negative
 composer privacy
+
+if command -v npm >/dev/null 2>&1; then
+    npm test --silent
+else
+    echo "pre-commit: brak npm, pomijam testy skryptów procesu (w CI biegną zawsze)." >&2
+fi
