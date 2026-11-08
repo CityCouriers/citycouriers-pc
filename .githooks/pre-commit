@@ -22,6 +22,17 @@ else
     scope="privacy lint stan smells test negative"
 fi
 
+# Testy skryptów procesu: npm test, a gdy jest sam Node bez npm, bezpośrednio node --test (ten sam zestaw plików).
+# Bramka nie pada z powodu braku npm i nie jest po cichu pomijana.
+run_process_tests() {
+    if command -v npm >/dev/null 2>&1; then
+        npm test --silent
+    else
+        echo "pre-commit: brak npm, uruchamiam node --test bezpośrednio." >&2
+        node --test test/*.test.js
+    fi
+}
+
 for gate in $scope; do
     echo "[pre-commit] $gate" >&2
     case "$gate" in
@@ -31,7 +42,7 @@ for gate in $scope; do
         smells) composer smells ;;
         test) composer test ;;
         negative) composer negative ;;
-        process) npm test --silent ;;
+        process) run_process_tests ;;
         *)
             echo "pre-commit: nieznana bramka '$gate'" >&2
             exit 1
