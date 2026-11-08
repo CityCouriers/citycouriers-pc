@@ -3,7 +3,7 @@
     "description": "pc: lokalne bramki jakosci PHP (PHPStan, PHPMD, Pint lub PHPCS, testy, mutacje) jako pakiet Composera.",
     "type": "library",
     "license": "MIT",
-    "homepage": "https://github.com/CityCouriers/citycouriers-pc",
+    "homepage": "https://github.com/CityCouriers/pc",
     "keywords": ["quality", "pre-commit", "phpstan", "phpmd", "pint", "gates"],
     "require": {
         "php": "^8.4",

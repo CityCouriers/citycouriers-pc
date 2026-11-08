@@ -20,8 +20,9 @@ Recenzent (strona inna niż autor treści) rozstrzyga komentarzem `/audit-ok` al
 stan do `audit:pending`. Etykietami `audit:*` zarządza workflow, nie ręka. Bramka jest konwencją, a nie zamkiem:
 GitHub nie potrafi zablokować pracy nad zgłoszeniem, a etykieta jest sygnałem dla człowieka i agenta.
 
-Zgłoszenia założone przed uruchomieniem bramki (plan bramek #3-#35) są poza nią; data startu jest w
-`.github/workflows/issue-audit.yml` i nie wolno jej cofać (cichy backfill całego archiwum).
+Bramka działa od północy UTC w dniu założenia repo (2026-11-08); data startu jest w
+`.github/workflows/issue-audit.yml` i nie wolno jej cofać (cichy backfill całego archiwum). Zgłoszenie wchodzi do
+bramki, gdy jest w zakresie i zostało zmienione po starcie, albo gdy recenzent rozstrzygnie je komendą.
 
 ## Pull requesty
 

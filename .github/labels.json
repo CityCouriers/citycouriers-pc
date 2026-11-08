@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "repo": "CityCouriers/citycouriers-pc",
+  "repo": "CityCouriers/pc",
   "prune": false,
   "color_rules": {
     "priority": "warm colors = urgency",

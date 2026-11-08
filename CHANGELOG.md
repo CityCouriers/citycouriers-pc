@@ -6,6 +6,11 @@ Pełny opis: [docs/wydania.md](docs/wydania.md).
 
 ## [Unreleased]
 
+### Changed
+
+- Repozytorium nazywa się `pc` (wcześniej `citycouriers-pc`), zgodnie z konwencją krótkich nazw repozytoriów CityCouriers. Nazwa pakietu Composera (`citycouriers/pc`) bez zmian. Stary adres przekierowuje.
+- Start bramki audytu zgłoszeń: 2026-11-08T00:00:00Z.
+
 ### Added
 
 - Proces repozytorium jak w pozostałych repo CityCouriers: etykiety `P0`-`P4`, `T1`-`T3`, `area:*` (`.github/labels.json`,
