@@ -6,7 +6,9 @@ Pełny opis: [docs/wydania.md](docs/wydania.md).
 
 ## [Unreleased]
 
-Szkielet paczki (przyszłe wydanie próbne 0.1.0), bez bramek przeniesionych z repo źródłowego.
+## [0.1.0] - 2026-11-08
+
+Wydanie próbne: szkielet paczki, bez bramek przeniesionych z repo źródłowego.
 
 ### Added
 
