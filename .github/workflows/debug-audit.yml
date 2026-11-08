@@ -1,0 +1,36 @@
+name: Debug audit gate (tymczasowy)
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  issues: read
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Dump
+        run: |
+          node -e "
+          const {fetchInput}=require('./scripts/quality/issue-audit-fetch.js');
+          const sides=require('./scripts/quality/issue-audit-sides.js');
+          const i=fetchInput('CityCouriers/pc',37);
+          console.log('barrier', i.barrier, 'createdAt', i.createdAt, 'app', JSON.stringify(i.app));
+          console.log('labels', i.labels.join(','));
+          for (const c of i.comments) console.log(JSON.stringify({assoc:c.authorAssociation,created:c.createdAt,lastEditedAt:c.lastEditedAt,app:c.app,first:String(c.body).split('\n')[0],side:sides.commentSide(c)}));
+          console.log('author', JSON.stringify(sides.authorSide(i.body,i.labels,i.app)));
+          "
+      - name: Dry run
+        run: >-
+          node scripts/quality/issue-audit-gate.js --issue 37 --dry-run
+          --gate-active-since 2026-11-08T00:00:00Z --triage-active-since 2026-11-08T00:00:00Z --triage-required P,T
