@@ -65,16 +65,16 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GITHUB_REPOSITORY: ${{ github.repository }}
       ISSUE: ${{ github.event.issue.number }}
-      # Moment uruchomienia bramki W TYM repozytorium (zgłoszenia #3-#35 z planu bramek powstały wcześniej i są poza bramką; nie cofaj tej daty, bo to cichy backfill).
+      # Moment uruchomienia bramki W TYM repozytorium (północ UTC w dniu założenia repo, obejmuje zgłoszenia planu bramek w zakresie; nie cofaj tej daty, bo to cichy backfill).
       # Trzymamy go w workflow, a nie w skrypcie, bo ten sam skrypt obsługuje też
       # inne repozytoria, które weszły do bramki innego dnia. Cofnięcie tej daty
       # zrobiłoby cichy backfill całego archiwum.
-      GATE_ACTIVE_SINCE: "2026-11-09T00:00:00Z"
+      GATE_ACTIVE_SINCE: "2026-11-08T00:00:00Z"
       # Triage (#211 w wordpress-automation): issue utworzona od tej chwili bez
       # wymaganych etykiet dostaje je z tabeli „Triage” w treści albo
       # `needs-triage`. Osobna data, bo data startu bramki objęłaby wstecz całe
       # archiwum. Rodziny wymagane też są własnością repozytorium: tutaj P i T.
-      TRIAGE_ACTIVE_SINCE: "2026-11-09T00:00:00Z"
+      TRIAGE_ACTIVE_SINCE: "2026-11-08T00:00:00Z"
       TRIAGE_REQUIRED: "P,T"
     steps:
       - name: Checkout gate script

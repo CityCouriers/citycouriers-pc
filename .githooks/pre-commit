@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hook pre-commit repo citycouriers-pc: te same kontrole co w CI (poza skanerem sekretów, który wymaga Dockera).
+# Hook pre-commit repo pc: te same kontrole co w CI (poza skanerem sekretów, który wymaga Dockera).
 # Włączenie: composer hooks (git config core.hooksPath .githooks). Bez --no-verify.
 set -euo pipefail
 

@@ -1,6 +1,6 @@
 name: CI
 
-# Kontrole repo citycouriers-pc. Repo jest publiczne, więc minuty Actions na standardowych runnerach są darmowe.
+# Kontrole repo pc. Repo jest publiczne, więc minuty Actions na standardowych runnerach są darmowe.
 # Każdy job kontrolny jest wymieniony w `quality-gate` (wymagana kontrola na `main`, razem z `pr-title`). Dodając job,
 # dopisz go do `needs` i do scripts/quality/quality-gate.js (test pilnuje zgodności).
 # Kontrole ujemne (scripts/ci/negative-controls.sh i krok w secret-scan) dowodzą, że bramki zatrzymują znany błąd:

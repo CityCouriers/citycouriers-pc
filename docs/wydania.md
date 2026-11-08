@@ -36,5 +36,5 @@ tagu, a dla tagu niespójnego z wersją albo bez wpisu w changelogu kończy się
 
 ## Dystrybucja
 
-Na starcie paczka jest dostępna z repozytorium typu `vcs` (`composer config repositories.pc vcs https://github.com/CityCouriers/citycouriers-pc`).
+Na starcie paczka jest dostępna z repozytorium typu `vcs` (`composer config repositories.pc vcs https://github.com/CityCouriers/pc`).
 Publikacja na Packagist to osobna decyzja przy pierwszym wydaniu stabilnym.
