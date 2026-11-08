@@ -1,19 +1,51 @@
 #!/usr/bin/env bash
-# Hook pre-commit repo pc: te same kontrole co w CI (poza skanerem sekretów, który wymaga Dockera).
+# Hook pre-commit repo pc: te same kontrole co w CI (poza skanerem sekretów, który wymaga binarki gitleaks).
 # Włączenie: composer hooks (git config core.hooksPath .githooks). Bez --no-verify.
+#
+# Zakres: bramki uruchamiane są dla typów zmienionych plików (scripts/quality/hook-scope.js, docs/bramki.md,
+# sekcja „Zakres plików bramki”). Commit z samym .md nie uruchamia PHPStan ani testów, bo nic w nich nie sprawdzą.
+# Każda niepewność (pusty stage, nieznany plik, błąd klasyfikatora, brak node) daje pełny zestaw.
+# PC_HOOK_SCOPE=all wymusza pełny zestaw. Lista bramek musi zgadzać się ze skryptem (pilnuje tego test/hook-scope.test.js).
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
-composer lint
-composer stan
-composer smells
-composer test
-composer negative
-composer privacy
+all_gates="privacy lint stan smells test negative process"
 
-if command -v npm >/dev/null 2>&1; then
-    npm test --silent
+if command -v node >/dev/null 2>&1; then
+    if ! scope="$(node scripts/quality/hook-scope.js)"; then
+        echo "pre-commit: klasyfikator zakresu zawiódł, uruchamiam pełny zestaw bramek." >&2
+        scope="$all_gates"
+    fi
 else
-    echo "pre-commit: brak npm, pomijam testy skryptów procesu (w CI biegną zawsze)." >&2
+    echo "pre-commit: brak node, uruchamiam pełny zestaw bramek bez testów skryptów procesu (w CI biegną zawsze)." >&2
+    scope="privacy lint stan smells test negative"
 fi
+
+# Testy skryptów procesu: npm test, a gdy jest sam Node bez npm, bezpośrednio node --test (ten sam zestaw plików).
+# Bramka nie pada z powodu braku npm i nie jest po cichu pomijana.
+run_process_tests() {
+    if command -v npm >/dev/null 2>&1; then
+        npm test --silent
+    else
+        echo "pre-commit: brak npm, uruchamiam node --test bezpośrednio." >&2
+        node --test test/*.test.js
+    fi
+}
+
+for gate in $scope; do
+    echo "[pre-commit] $gate" >&2
+    case "$gate" in
+        privacy) composer privacy ;;
+        lint) composer lint ;;
+        stan) composer stan ;;
+        smells) composer smells ;;
+        test) composer test ;;
+        negative) composer negative ;;
+        process) run_process_tests ;;
+        *)
+            echo "pre-commit: nieznana bramka '$gate'" >&2
+            exit 1
+            ;;
+    esac
+done

@@ -30,6 +30,11 @@ Fakty z pomiarem i źródłem (komenda, wynik, plik i linia). Hipotezy oznacz ja
 
 - [ ] 
 
+## Zakres plików (dla bramek)
+
+Na jakie typy plików bramka się uruchamia, jakie pomija i dlaczego, które pliki konfiguracji zmieniają jej wynik dla całego
+repo, jakie kontrprzykłady muszą ją uruchomić (`docs/bramki.md`). Dla zgłoszeń nie o bramce: `N/A`.
+
 ## Poza zakresem
 
 Co celowo zostaje dla innych zgłoszeń (numery).
