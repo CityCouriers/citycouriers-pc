@@ -150,6 +150,28 @@ function latestDecision(comments, barrier, cfg, reviewer) {
 }
 
 /**
+ * Komendy nowsze niż bariera rewizji, które odrzucono WYŁĄCZNIE z powodu `author_association` spoza listy
+ * `commandAssociations`. Służy tylko do diagnozy: bez tego odrzucenie wygląda jak „brak werdyktu”.
+ *
+ * Typowa przyczyna: członkostwo w organizacji jest ukryte, więc `GITHUB_TOKEN` (nie członek) widzi autora jako
+ * `CONTRIBUTOR`, mimo że webhook i token członka pokazują `MEMBER`. Listy dozwolonych nie rozszerzamy: `CONTRIBUTOR`
+ * to także każdy, kogo PR został scalony, a podpis strony bez aplikacji (Claude Code przez `gh`) da się podrobić.
+ */
+function rejectedByAssociation(comments, barrier, cfg, reviewer) {
+  if (!reviewer) return [];
+  // Te same warunki co w latestDecision(), poza `author_association`: liczymy tylko komendy, które po zmianie samej
+  // wartości association byłyby przyjęte. Inaczej podpowiedź „ustaw członkostwo jako publiczne” prowadziłaby w ślepy zaułek
+  // dla komentarza edytowanego, od złej strony albo bez podpisu.
+  return (comments || [])
+    .filter(c => parseCommand(c.body, cfg))
+    .filter(c => !c.lastEditedAt)
+    .filter(c => commentSide(c) === reviewer)
+    .filter(c => c.createdAt > barrier)
+    .filter(c => !cfg.commandAssociations.includes(c.authorAssociation))
+    .map(c => String(c.authorAssociation || 'brak'));
+}
+
+/**
  * Kiedy issue OSTATNI raz weszła w zakres bramki (`out → in`); '' gdy nigdy.
  *
  * Pierwotny projekt czytał to z payloadu zdarzenia `labeled`, bo założyliśmy,
@@ -202,9 +224,16 @@ function isEngaged(input, barrier, decision, cfg) {
  * Stan docelowy z werdyktu (albo jego braku) i autorstwa treści. Przy
  * nieustalonym autorze nikt nie jest recenzentem, więc zostaje `audit:pending`.
  */
-function wantedState(decision, author, barrier, cfg) {
+function wantedState(decision, author, barrier, cfg, rejected = []) {
   if (!author.side) return { label: AUDIT_PENDING, reason: 'autorstwo nieustalone: ' + author.reason };
-  if (!decision) return { label: AUDIT_PENDING, reason: 'brak ważnego rozstrzygnięcia dla rewizji ' + barrier };
+  if (!decision) {
+    const hint = rejected.length
+      ? '; pominięto ' + rejected.length + ' komend(ę/y) z powodu author_association: ' + [...new Set(rejected)].join(', ')
+        + ' (dozwolone: ' + cfg.commandAssociations.join(', ') + '). Ukryte członkostwo w organizacji pokazuje GITHUB_TOKEN'
+        + ' jako CONTRIBUTOR: ustaw członkostwo jako publiczne'
+      : '';
+    return { label: AUDIT_PENDING, reason: 'brak ważnego rozstrzygnięcia dla rewizji ' + barrier + hint };
+  }
   return {
     label: 'audit:' + parseCommand(decision.body, cfg),
     reason: 'rozstrzygnięcie z ' + decision.createdAt + ' nowsze niż rewizja ' + barrier
@@ -264,7 +293,8 @@ function reconcile(input, config = {}) {
     return { action: 'none', label: current, reason: 'issue nieobjęta bramką (brak backfillu)' };
   }
 
-  return settle(wantedState(decision, author, barrier, cfg), present, current);
+  const rejected = decision ? [] : rejectedByAssociation(input.comments, barrier, cfg, reviewerOf(author.side));
+  return settle(wantedState(decision, author, barrier, cfg, rejected), present, current);
 }
 
 /** Etykiety issue należące do rodziny triage'u. */
