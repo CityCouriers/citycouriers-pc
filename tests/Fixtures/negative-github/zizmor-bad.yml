@@ -1,0 +1,12 @@
+# Plik testowy z celowymi błędami dla kontroli ujemnej zizmor: pull_request_target z checkoutem kodu z PR i wstrzyknięciem
+# przez szablon (tytuł PR w skrypcie).
+name: zizmor negative fixture
+on: pull_request_target
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - run: echo "${{ github.event.pull_request.title }}"

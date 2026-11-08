@@ -1,0 +1,9 @@
+# Plik testowy z celowym błędem dla kontroli ujemnej pinact: akcja przypięta do tagu zamiast do pełnego SHA.
+name: pinact negative fixture
+on: push
+permissions: {}
+jobs:
+  unpinned:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7

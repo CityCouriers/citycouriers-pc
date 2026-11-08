@@ -21,6 +21,11 @@ Pełny opis: [docs/wydania.md](docs/wydania.md).
 
 ### Added
 
+- Bramki plików GitHub, po jednej na narzędzie (zgłoszenia #5, #6, #43, #44, #45, #46): actionlint 1.7.12, ShellCheck,
+  zizmor 1.32.0 (persona pedantic), yamllint 1.38.0, check-jsonschema 0.39.0, pinact 5.0.2. Wspólne źródło komend
+  `scripts/ci/github-gate.sh` dla hooka i CI, kontrola ujemna każdego narzędzia (`tests/Fixtures/negative-github/`),
+  binarki w CI z sumą SHA-256, paczki Pythona z hashami (`scripts/ci/requirements-lint.txt`). Wpięte w `quality-gate`
+  i w klasyfikator zakresu hooka.
 - Zakres bramek hooka pre-commit (`scripts/quality/hook-scope.js`): commit z samą dokumentacją nie uruchamia PHPStan, PHPMD
   ani testów. Allowlista zwolnień, fail-closed, widoczna lista pominiętych, `PC_HOOK_SCOPE=all`. Zasady i wyzwalacze
   bramek: `docs/bramki.md`.

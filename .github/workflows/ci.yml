@@ -129,6 +129,129 @@ jobs:
           persist-credentials: false
       - run: bash scripts/ci/privacy-scan.sh
 
+  # Bramki plików GitHub (zgłoszenia #5, #43, #44, #45, #46, #6). Komendy i kontrole ujemne są w jednym skrypcie,
+  # scripts/ci/github-gate.sh, który woła też hook pre-commit (ten sam zestaw lokalnie i w CI). Narzędzia w przypiętych
+  # wersjach: binarki z sumą SHA-256, paczki Pythona z hashami wszystkich zależności (scripts/ci/requirements-lint.txt).
+  # W CI biegną zawsze (przebiegi trwają kilkanaście sekund); zakres plików skraca tylko lokalny hook (hook-scope.js).
+  actionlint:
+    name: actionlint (workflow GitHub Actions)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: "1.7.12"
+          ACTIONLINT_SHA256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+        run: |
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/$archive"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+      # shellcheck jest preinstalowany na runnerze ubuntu, więc actionlint sprawdza też skrypty w krokach `run:`.
+      - name: actionlint (z kontrolą ujemną)
+        run: |
+          export PATH="$RUNNER_TEMP:$PATH"
+          shellcheck --version | head -2
+          bash scripts/ci/github-gate.sh actionlint
+
+  zizmor:
+    name: zizmor (bezpieczeństwo workflow, persona pedantic)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install lint tools (hashed)
+        run: |
+          python3 -m venv "$RUNNER_TEMP/lint"
+          "$RUNNER_TEMP/lint/bin/pip" install --quiet --require-hashes -r scripts/ci/requirements-lint.txt
+      # Z tokenem działają audyty online (impostor-commit, known-vulnerable-actions). Konfiguracja: .github/zizmor.yml.
+      - name: zizmor (z kontrolą ujemną)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          export PATH="$RUNNER_TEMP/lint/bin:$PATH"
+          bash scripts/ci/github-gate.sh zizmor
+
+  yamllint:
+    name: yamllint (styl i poprawność YAML)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install lint tools (hashed)
+        run: |
+          python3 -m venv "$RUNNER_TEMP/lint"
+          "$RUNNER_TEMP/lint/bin/pip" install --quiet --require-hashes -r scripts/ci/requirements-lint.txt
+      - name: yamllint (z kontrolą ujemną)
+        run: |
+          export PATH="$RUNNER_TEMP/lint/bin:$PATH"
+          bash scripts/ci/github-gate.sh yamllint
+
+  schema:
+    name: check-jsonschema (schematy plików GitHub)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install lint tools (hashed)
+        run: |
+          python3 -m venv "$RUNNER_TEMP/lint"
+          "$RUNNER_TEMP/lint/bin/pip" install --quiet --require-hashes -r scripts/ci/requirements-lint.txt
+      - name: check-jsonschema (z kontrolą ujemną)
+        run: |
+          export PATH="$RUNNER_TEMP/lint/bin:$PATH"
+          bash scripts/ci/github-gate.sh schema
+
+  pinact:
+    name: pinact (akcje przypięte do SHA z komentarzem wersji)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinact
+        env:
+          PINACT_VERSION: "5.0.2"
+          PINACT_SHA256: "7f003d8f51e984c2264d2009d430e3e0e87ae404a0e2dc2a9a277b0f731bf5b7"
+        run: |
+          archive="pinact_linux_amd64.tar.gz"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$archive" \
+            "https://github.com/suzuki-shunsuke/pinact/releases/download/v${PINACT_VERSION}/$archive"
+          echo "$PINACT_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" pinact
+      # Z tokenem pinact sprawdza także, czy komentarz wersji zgadza się z przypiętym SHA (--verify-comment).
+      - name: pinact (z kontrolą ujemną)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          export PATH="$RUNNER_TEMP:$PATH"
+          bash scripts/ci/github-gate.sh pinact
+
+  shellcheck:
+    name: ShellCheck (skrypty .sh i hooki)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # ShellCheck jest preinstalowany na runnerze ubuntu; wersja wynika z obrazu (wypisana w logu).
+      - name: ShellCheck (z kontrolą ujemną)
+        run: |
+          shellcheck --version | head -2
+          bash scripts/ci/github-gate.sh shellcheck
+
   process-tests:
     name: Testy skryptów procesu
     runs-on: ubuntu-latest
@@ -199,7 +322,8 @@ jobs:
   quality-gate:
     name: quality-gate
     if: always()
-    needs: [composer, pint, phpstan, phpmd, tests, negative-controls, privacy, secret-scan, process-tests]
+    needs: [composer, pint, phpstan, phpmd, tests, negative-controls, privacy, secret-scan, process-tests,
+            actionlint, zizmor, yamllint, schema, pinact, shellcheck]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

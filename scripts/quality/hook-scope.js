@@ -20,7 +20,11 @@
  */
 
 /** Wszystkie bramki hooka, w kolejności uruchamiania (od najszybszych). */
-const GATES = ['privacy', 'lint', 'stan', 'smells', 'test', 'negative', 'process'];
+const GATES = ['privacy', 'shellcheck', 'yamllint', 'actionlint', 'schema', 'pinact', 'zizmor', 'lint', 'stan', 'smells', 'test', 'negative', 'process'];
+
+/** Bramki plików GitHub (jedno narzędzie na bramkę, komendy w scripts/ci/github-gate.sh). */
+const YAML_TOOLS = ['actionlint', 'zizmor', 'yamllint', 'schema', 'pinact'];
+const GITHUB_GATES = [...YAML_TOOLS, 'shellcheck'];
 
 /** Bramki zależne od kodu PHP paczki. */
 const PHP_CHAIN = ['lint', 'stan', 'smells', 'test', 'negative'];
@@ -28,6 +32,12 @@ const PHP_CHAIN = ['lint', 'stan', 'smells', 'test', 'negative'];
 /** Co wyzwala daną bramkę (opis do komunikatu o pominięciu). */
 const TRIGGERS = {
   privacy: 'każda zmiana (tania, czyta listę plików repo)',
+  shellcheck: '.sh, .githooks/*',
+  yamllint: '.yml i .yaml w .github/, .yamllint.yaml',
+  actionlint: '.github/workflows/*.y(a)ml, .yamllint.yaml, .github/zizmor.yml',
+  schema: '.github/workflows/*.y(a)ml, .github/dependabot.yml, .github/ISSUE_TEMPLATE/config.yml',
+  pinact: '.github/workflows/*.y(a)ml',
+  zizmor: '.github/workflows/*.y(a)ml, .github/dependabot.yml, .github/zizmor.yml, requirements-lint',
   lint: '.php, pint.json, composer.json',
   stan: '.php, phpstan.neon, composer.json',
   smells: 'src/, bin/pc, rulesets/, composer.json',
@@ -38,7 +48,8 @@ const TRIGGERS = {
 
 const DOCS_EXTENSIONS = ['.md', '.txt', '.png', '.jpg', '.jpeg', '.gif', '.svg'];
 const PHP_CONFIG = ['composer.json', 'pint.json', 'phpstan.neon', 'phpunit.xml.dist', 'scripts/ci/phpstan-negative.neon'];
-const FUSE_FILES = ['scripts/quality/hook-scope.js', 'test/hook-scope.test.js'];
+const FUSE_FILES = ['scripts/quality/hook-scope.js', 'test/hook-scope.test.js', 'scripts/ci/github-gate.sh'];
+const TOOL_CONFIGS = ['.yamllint.yaml', '.github/zizmor.yml', '.github/actionlint.yaml'];
 const SPECIAL_MODES = new Set(['120000', '160000']);
 
 const hasExtension = (path, extensions) => extensions.some(extension => path.endsWith(extension));
@@ -52,9 +63,15 @@ const RULES = [
   { name: 'php-config', gates: [...PHP_CHAIN, 'privacy'], match: path => PHP_CONFIG.includes(path) },
   { name: 'src-bin', gates: [...PHP_CHAIN, 'privacy'], match: path => path.startsWith('src/') || path === 'bin/pc' },
   { name: 'rulesets', gates: ['smells', 'negative', 'privacy'], match: path => path.startsWith('rulesets/') },
+  { name: 'github-fixtures', gates: [...GITHUB_GATES, 'privacy'], match: path => path.startsWith('tests/Fixtures/negative-github/') },
   { name: 'fixtures', gates: ['test', 'negative', 'privacy'], match: path => path.startsWith('tests/Fixtures/') },
   { name: 'tests-php', gates: ['lint', 'stan', 'test', 'privacy'], match: path => path.startsWith('tests/') && path.endsWith('.php') },
-  { name: 'ci-shell', gates: ['test', 'negative', 'privacy'], match: path => /^scripts\/ci\/[^/]+\.sh$/.test(path) },
+  { name: 'ci-shell', gates: ['test', 'negative', 'shellcheck', 'privacy'], match: path => /^scripts\/ci\/[^/]+\.sh$/.test(path) },
+  { name: 'lint-requirements', gates: ['yamllint', 'schema', 'zizmor', 'privacy'], match: path => /^scripts\/ci\/requirements-lint\.(in|txt)$/.test(path) },
+  { name: 'tool-configs', gates: [...YAML_TOOLS, 'privacy'], match: path => TOOL_CONFIGS.includes(path) },
+  { name: 'workflows', gates: [...YAML_TOOLS, 'process', 'privacy'], match: path => /^\.github\/workflows\/[^/]+\.ya?ml$/.test(path) },
+  { name: 'dependabot', gates: ['zizmor', 'yamllint', 'schema', 'process', 'privacy'], match: path => path === '.github/dependabot.yml' },
+  { name: 'issue-config', gates: ['yamllint', 'schema', 'process', 'privacy'], match: path => path === '.github/ISSUE_TEMPLATE/config.yml' },
   {
     name: 'process',
     gates: ['process', 'privacy'],
@@ -68,9 +85,7 @@ const RULES = [
     match: path => path === 'LICENSE' || hasExtension(path, ['.md']) || (path.startsWith('docs/') && hasExtension(path, DOCS_EXTENSIONS)),
   },
   // Skan prywatności czyta listę plików repo przez git, więc zmiana ignorowanych plików go dotyczy.
-  // `.yamllint.yaml` konfiguruje bramkę yamllint, której w hooku jeszcze nie ma (zgłoszenie o yamllint); do czasu jej
-  // wdrożenia zmiana konfiguracji dotyczy tylko skanu prywatności.
-  { name: 'git-meta', gates: ['privacy'], match: path => ['.gitignore', '.gitattributes', '.yamllint.yaml'].includes(path) },
+  { name: 'git-meta', gates: ['privacy'], match: path => ['.gitignore', '.gitattributes'].includes(path) },
 ];
 
 /** Czy ścieżka z gita jest bezpieczna do klasyfikacji (nie ufamy dziwnym ścieżkom). */

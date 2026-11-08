@@ -1,0 +1,9 @@
+# Plik testowy z celowym błędem dla kontroli ujemnej actionlint: nieistniejąca właściwość kontekstu (evnt zamiast event).
+name: actionlint negative fixture
+on: push
+permissions: {}
+jobs:
+  bad:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ github.evnt.name }}"
