@@ -1,0 +1,30 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use CityCouriers\Pc\Application;
+
+// Instalacja jako zależność (vendor/citycouriers/pc/bin) albo praca w samym repo.
+foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php'] as $autoload) {
+    if (is_file($autoload)) {
+        require $autoload;
+        break;
+    }
+}
+
+if (!class_exists(Application::class)) {
+    fwrite(STDERR, "pc: brak autoloadera Composera. Uruchom `composer install`.\n");
+    exit(1);
+}
+
+$result = (new Application())->run(array_slice($argv, 1));
+
+if ($result->stdout !== '') {
+    fwrite(STDOUT, $result->stdout);
+}
+if ($result->stderr !== '') {
+    fwrite(STDERR, $result->stderr);
+}
+
+exit($result->exitCode);

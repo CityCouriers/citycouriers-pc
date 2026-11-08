@@ -1,0 +1,9 @@
+{
+    "preset": "per",
+    "notPath": [
+        "tests/Fixtures"
+    ],
+    "rules": {
+        "declare_strict_types": true
+    }
+}

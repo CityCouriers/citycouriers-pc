@@ -1,0 +1,3 @@
+# Konfiguracja kontroli ujemnej: bez excludePaths, żeby plik testowy z błędem był analizowany.
+parameters:
+    level: max

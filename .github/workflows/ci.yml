@@ -1,0 +1,156 @@
+name: CI
+
+# Kontrole repo citycouriers-pc. Repo jest publiczne, więc minuty Actions na standardowych runnerach są darmowe.
+# Każdy job kontrolny jest wymieniony w `ci-gate` (jedyna wymagana kontrola na `main`). Dodając job, dopisz go do `needs`.
+# Kontrole ujemne (scripts/ci/negative-controls.sh i krok w secret-scan) dowodzą, że bramki zatrzymują znany błąd:
+# zielone CI samo tego nie pokazuje.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Wersja PHP zgodna z Nexusem (8.4.x). Akcja shivammathur/setup-php (spoza actions/*) jest przypięta do SHA commitu tagu 2.40.0.
+  PHP_VERSION: "8.4"
+
+jobs:
+  composer:
+    name: composer validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+      - run: composer validate --strict --no-check-lock
+
+  pint:
+    name: Pint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer lint
+
+  phpstan:
+    name: PHPStan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer stan
+
+  phpmd:
+    name: PHPMD (surowy zestaw)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer smells
+
+  tests:
+    name: Pest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer test
+
+  negative-controls:
+    name: Kontrole ujemne bramek
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: composer negative
+
+  privacy:
+    name: Skan prywatności
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - run: bash scripts/ci/privacy-scan.sh
+
+  secret-scan:
+    name: Skan sekretów (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # Obraz z oficjalnego repo gitleaks, przypięty do wersji. Akcja gitleaks-action wymaga licencji dla organizacji, więc używamy obrazu.
+      GITLEAKS_IMAGE: zricethezav/gitleaks:v8.28.0
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Skan całej historii
+        run: docker run --rm -v "$PWD:/repo" "$GITLEAKS_IMAGE" git /repo --redact --verbose
+      - name: Kontrola ujemna, skaner musi wykryć sztuczny token
+        run: |
+          set -u
+          scan_dir="$(mktemp -d)"
+          chmod 755 "$scan_dir"
+          printf 'token = "github_pat_%s"\n' "$(LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c 82)" > "$scan_dir/fake.env"
+          chmod 644 "$scan_dir/fake.env"
+          if docker run --rm -v "$scan_dir:/scan" "$GITLEAKS_IMAGE" dir /scan --redact --no-banner; then
+            echo "BŁĄD: gitleaks przepuścił sztuczny token. Skaner nie działa."
+            exit 1
+          fi
+          echo "OK: gitleaks zatrzymał sztuczny token."
+
+  ci-gate:
+    name: ci-gate
+    if: ${{ always() }}
+    needs: [composer, pint, phpstan, phpmd, tests, negative-controls, privacy, secret-scan]
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Wszystkie kontrole muszą być zielone
+        run: |
+          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped') }}" = "true" ]; then
+            echo "Co najmniej jedna kontrola nie przeszła."
+            exit 1
+          fi
+          echo "Wszystkie kontrole zielone."

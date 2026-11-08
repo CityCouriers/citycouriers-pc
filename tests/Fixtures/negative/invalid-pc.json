@@ -1,0 +1,7 @@
+{
+    "version": 2,
+    "standard": "eslint",
+    "paths": {"src": ["/abs/path/src"]},
+    "gates": {"nieistniejaca": true, "phpstan": "tak"},
+    "unknown": 1
+}

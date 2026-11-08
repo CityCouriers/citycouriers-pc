@@ -1,0 +1,22 @@
+{
+    "version": 1,
+    "standard": "phpcs",
+    "paths": {
+        "src": ["src"],
+        "tests": ["tests"]
+    },
+    "gates": {
+        "format": true,
+        "phpstan": true,
+        "phpmd": true,
+        "phpcompat": true,
+        "mutation": false
+    },
+    "rulesets": {
+        "phpmd": "vendor/citycouriers/pc/rulesets/phpmd.xml"
+    },
+    "modules": {
+        "wordpress": true,
+        "laravel": false
+    }
+}

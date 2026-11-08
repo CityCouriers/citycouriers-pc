@@ -1,0 +1,10 @@
+* text=auto eol=lf
+
+# Archiwum wydania (composer require z dist) bez plików deweloperskich.
+/.github export-ignore
+/.githooks export-ignore
+/tests export-ignore
+/scripts/ci export-ignore
+/phpstan.neon export-ignore
+/phpunit.xml.dist export-ignore
+/pint.json export-ignore

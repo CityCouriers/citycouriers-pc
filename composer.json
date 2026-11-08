@@ -1,0 +1,58 @@
+{
+    "name": "citycouriers/pc",
+    "description": "pc: lokalne bramki jakosci PHP (PHPStan, PHPMD, Pint lub PHPCS, testy, mutacje) jako pakiet Composera.",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://github.com/CityCouriers/citycouriers-pc",
+    "keywords": ["quality", "pre-commit", "phpstan", "phpmd", "pint", "gates"],
+    "require": {
+        "php": "^8.4",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.24",
+        "pdepend/pdepend": "3.x-dev",
+        "pestphp/pest": "^4.0",
+        "phpmd/phpmd": "3.x-dev",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "CityCouriers\\Pc\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CityCouriers\\Pc\\Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/pc"
+    ],
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "scripts": {
+        "check": [
+            "@lint",
+            "@stan",
+            "@smells",
+            "@test",
+            "@negative"
+        ],
+        "hooks": "git config core.hooksPath .githooks",
+        "lint": "pint --test",
+        "negative": "bash scripts/ci/negative-controls.sh",
+        "privacy": "bash scripts/ci/privacy-scan.sh",
+        "smells": "phpmd analyze src --format text --ruleset rulesets/phpmd.xml",
+        "stan": "phpstan analyse --memory-limit=512M --no-progress",
+        "test": "pest"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
