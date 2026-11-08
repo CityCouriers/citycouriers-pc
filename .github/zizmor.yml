@@ -1,0 +1,9 @@
+# Konfiguracja zizmor (audyt bezpieczeństwa workflow). Każdy wyjątek ma uzasadnienie.
+rules:
+  dangerous-triggers:
+    ignore:
+      # issue_comment jest tu potrzebny: bramka audytu reaguje na komendy /audit-ok i /audit-changes. Workflow tylko
+      # czyta stan zgłoszenia i ustawia etykiety (uprawnienia: contents read, issues write), kod bierze z gałęzi
+      # domyślnej (zdarzenie issue_comment tak działa), nie wykonuje treści komentarza, a job ogranicza autorów do
+      # OWNER/MEMBER/COLLABORATOR i pomija komentarze pull requestów.
+      - issue-audit.yml

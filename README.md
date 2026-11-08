@@ -64,6 +64,18 @@ npm test          # testy skryptów procesu (bramka audytu, etykiety, quality-ga
 composer privacy  # skan ścieżek maszyn i adresów e-mail
 ```
 
+Bramki plików GitHub (hook uruchamia je tylko przy zmianie `.github/**`, `.sh`, `.githooks/**`) wymagają narzędzi lokalnie
+(w CI są instalowane w przypiętych wersjach). Brak narzędzia to głośny błąd z instrukcją. Windows:
+
+```bash
+winget install --id rhysd.actionlint --exact --version 1.7.12
+winget install --id zizmor.zizmor --exact --version 1.32.0
+winget install --id suzuki-shunsuke.pinact --exact --version 5.0.2
+winget install --id koalaman.shellcheck --exact --version 0.11.0
+uv tool install yamllint==1.38.0
+uv tool install check-jsonschema==0.39.0
+```
+
 Zmiany idą przez Pull Request z zielonym `quality-gate`. Commit przez hook, bez `--no-verify`.
 
 ## Licencja

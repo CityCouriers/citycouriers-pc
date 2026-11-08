@@ -1,0 +1,6 @@
+# Narzędzia Pythona do kontroli plików GitHub (bramki repo: yamllint, check-jsonschema, zizmor).
+# Wersje przypięte; plik z sumami kontrolnymi wszystkich zależności: requirements-lint.txt
+# (generowany: uv pip compile --universal --generate-hashes scripts/ci/requirements-lint.in -o scripts/ci/requirements-lint.txt).
+yamllint==1.38.0
+check-jsonschema==0.39.0
+zizmor==1.32.0

@@ -1,0 +1,3 @@
+# Plik testowy z celowym błędem dla kontroli ujemnej check-jsonschema: updates musi być listą, a nie napisem.
+version: 2
+updates: "to nie jest lista"

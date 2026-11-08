@@ -10,7 +10,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
-all_gates="privacy lint stan smells test negative process"
+all_gates="privacy shellcheck yamllint actionlint schema pinact zizmor lint stan smells test negative process"
 
 if command -v node >/dev/null 2>&1; then
     if ! scope="$(node scripts/quality/hook-scope.js)"; then
@@ -19,7 +19,7 @@ if command -v node >/dev/null 2>&1; then
     fi
 else
     echo "pre-commit: brak node, uruchamiam pełny zestaw bramek bez testów skryptów procesu (w CI biegną zawsze)." >&2
-    scope="privacy lint stan smells test negative"
+    scope="privacy shellcheck yamllint actionlint schema pinact zizmor lint stan smells test negative"
 fi
 
 # Testy skryptów procesu: npm test, a gdy jest sam Node bez npm, bezpośrednio node --test (ten sam zestaw plików).
@@ -37,6 +37,12 @@ for gate in $scope; do
     echo "[pre-commit] $gate" >&2
     case "$gate" in
         privacy) composer privacy ;;
+        shellcheck) bash scripts/ci/github-gate.sh shellcheck ;;
+        yamllint) bash scripts/ci/github-gate.sh yamllint ;;
+        actionlint) bash scripts/ci/github-gate.sh actionlint ;;
+        schema) bash scripts/ci/github-gate.sh schema ;;
+        pinact) bash scripts/ci/github-gate.sh pinact ;;
+        zizmor) bash scripts/ci/github-gate.sh zizmor ;;
         lint) composer lint ;;
         stan) composer stan ;;
         smells) composer smells ;;

@@ -99,12 +99,22 @@ i wymusza decyzję o każdym nowym pliku w repo bez reguły (`test/hook-scope.te
 | `privacy` (ścieżki, e-maile) | każda zmiana | nic | `.gitignore`, `.gitattributes` |
 | `phpcs` (WPCS), `phpcompat` | `.php` | `.md`, `.yml`, `.json`, `.js` | zestaw reguł PHPCS, `composer.json` |
 | `prettier` | `.json`, `.yml`, `.md`, `.css` | `.php` | konfiguracja Prettiera |
-| `actionlint` | `.github/workflows/*.yml` i `*.yaml` | wszystko inne | sam klasyfikator, workflow |
+| `actionlint` | `.github/workflows/*.yml` i `*.yaml` | wszystko inne | `.yamllint.yaml`, `.github/zizmor.yml`, sam klasyfikator |
+| `zizmor` (pedantic) | `.github/workflows/*.y(a)ml`, `.github/dependabot.yml` | wszystko inne | `.github/zizmor.yml`, `requirements-lint` |
+| `yamllint` | `.yml` i `.yaml` w `.github/` | `.php`, `.md`, `.json` | `.yamllint.yaml` |
+| `schema` (check-jsonschema) | workflow, `dependabot.yml`, `ISSUE_TEMPLATE/config.yml` | wszystko inne | pliki schematów |
+| `pinact` | `.github/workflows/*.y(a)ml` | wszystko inne | konfiguracja pinact |
 | `shellcheck` | `.sh`, `.githooks/*` | wszystko inne | konfiguracja ShellCheck |
 | `gitleaks`, `composer audit` | zawsze (sekrety i podatności nie mają „typu pliku”) | nic | nie dotyczy |
 | `composer normalize` | `composer.json` | wszystko inne | nie dotyczy |
 | `mutation` | `.php` w `src/` | testy, dokumentacja, konfiguracja | testy zmienionego kodu |
 | `coverage`, `changed-lines` | `.php` w `src/` | testy, dokumentacja | polityka pokrycia |
 | `commit-msg` | każdy commit | nic | nie dotyczy |
+
+Bramki plików GitHub (`shellcheck`, `yamllint`, `actionlint`, `schema`, `pinact`, `zizmor`) mają jedno źródło komend,
+`scripts/ci/github-gate.sh`, które woła hook i CI. Każde wywołanie sprawdza prawdziwe pliki repo, a potem to samo
+narzędzie na pliku z celowym błędem z `tests/Fixtures/negative-github/` (kontrola ujemna: kod niezerowy i nazwa pliku w
+wyjściu). Brak narzędzia to głośny błąd z instrukcją instalacji, a pusta lista plików to „nie przeskanowano”, nie wynik
+zielony.
 
 Tabela jest wstępną propozycją. Ostateczne wyzwalacze każdej bramki ustala jej zgłoszenie i test zakresu.

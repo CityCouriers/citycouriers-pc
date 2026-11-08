@@ -1,28 +1,33 @@
 name: PR title
 
-# Release Drafter resolves the next SemVer version from the Conventional
-# Commit prefix of each merged PR title, so a malformed title silently produces
-# the wrong version. This check rejects titles that would not be classified.
+# Tytuł PR trafia do historii main (squash) i do CHANGELOG, więc musi dać się sklasyfikować wg Conventional Commits.
+# Zły tytuł po cichu psuje klasyfikację zmian (major/minor/patch), więc ta kontrola odrzuca tytuły niesklasyfikowalne.
 
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
 
-permissions:
-  pull-requests: read
+# Uprawnienia nadawane na poziomie jobu (najmniejsze potrzebne).
+permissions: {}
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   pr-title:
+    name: pr-title
+    permissions:
+      pull-requests: read  # odczyt tytułu PR przez action-semantic-pull-request
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: amannn/action-semantic-pull-request@v6
+      - uses: amannn/action-semantic-pull-request@2252a14e810aa9b85c2d560bd7070c802206ecf6 # v6.1.2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          # Superset of the categories in .github/release-drafter.yml:
-          # perf / build / revert are accepted here and land in Release
-          # Drafter's "Other Changes" (patch bump).
+          # Typy zgodne z Conventional Commits i z regułą SemVer dla bramek (docs/wydania.md):
+          # feat to minor lub major (nowa bramka), fix i pozostałe to patch.
           types: |
             feat
             new

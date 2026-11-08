@@ -10,6 +10,8 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: composer
     directory: /
@@ -21,6 +23,8 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: npm
     directory: /
@@ -32,3 +36,5 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
+    cooldown:
+      default-days: 7

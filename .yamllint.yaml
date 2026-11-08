@@ -1,0 +1,18 @@
+---
+# Konfiguracja yamllint dla workflow GitHub Actions i plików konfiguracyjnych repo.
+extends: default
+
+rules:
+  # `on:` w workflow to klucz, nie wartość logiczna.
+  truthy:
+    check-keys: false
+  # Pliki nie zaczynają się od `---` (konwencja GitHub Actions i dokumentacji GitHuba).
+  document-start: disable
+  # Komentarze po polsku i długie `run:` wymagają szerszej linii niż domyślne 80 znaków.
+  line-length:
+    max: 160
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+  # pinact dopisuje komentarz wersji po jednej spacji (`@sha # v7.0.1`).
+  comments:
+    min-spaces-from-content: 1

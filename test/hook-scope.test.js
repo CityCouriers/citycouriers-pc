@@ -25,6 +25,12 @@ describe('tabela: plik → bramki', () => {
     ['CHANGELOG.md', ['privacy']],
     ['LICENSE', ['privacy']],
     ['.gitignore', ['privacy']],
+    ['.yamllint.yaml', ['privacy', 'yamllint', 'actionlint', 'schema', 'pinact', 'zizmor']],
+    ['.github/zizmor.yml', ['privacy', 'yamllint', 'actionlint', 'schema', 'pinact', 'zizmor']],
+    ['.github/dependabot.yml', ['privacy', 'yamllint', 'schema', 'zizmor', 'process']],
+    ['.github/ISSUE_TEMPLATE/config.yml', ['privacy', 'yamllint', 'schema', 'process']],
+    ['scripts/ci/requirements-lint.txt', ['privacy', 'yamllint', 'schema', 'zizmor']],
+    ['tests/Fixtures/negative-github/pinact-bad.yml', ['privacy', 'shellcheck', 'yamllint', 'actionlint', 'schema', 'pinact', 'zizmor']],
     ['src/Application.php', ['privacy', 'lint', 'stan', 'smells', 'test', 'negative']],
     ['bin/pc', ['privacy', 'lint', 'stan', 'smells', 'test', 'negative']],
     ['composer.json', ['privacy', 'lint', 'stan', 'smells', 'test', 'negative']],
@@ -32,10 +38,10 @@ describe('tabela: plik → bramki', () => {
     ['tests/Unit/ApplicationTest.php', ['privacy', 'lint', 'stan', 'test']],
     ['tests/Fixtures/valid-pc.json', ['privacy', 'test', 'negative']],
     ['tests/Fixtures/negative/bad-type.php', ['privacy', 'test', 'negative']],
-    ['scripts/ci/check-release.sh', ['privacy', 'test', 'negative']],
+    ['scripts/ci/check-release.sh', ['privacy', 'shellcheck', 'test', 'negative']],
     ['scripts/quality/issue-audit-gate.js', ['privacy', 'process']],
     ['test/labels.test.js', ['privacy', 'process']],
-    ['.github/workflows/ci.yml', ['privacy', 'process']],
+    ['.github/workflows/ci.yml', ['privacy', 'yamllint', 'actionlint', 'schema', 'pinact', 'zizmor', 'process']],
     ['.github/labels.json', ['privacy', 'process']],
     ['package.json', ['privacy', 'process']],
   ];
@@ -45,15 +51,16 @@ describe('tabela: plik → bramki', () => {
 
   test('suma bramek dla kilku plików, w kolejności uruchamiania', () => {
     assert.deepEqual(gates(['README.md', 'test/labels.test.js']), ['privacy', 'process']);
+    assert.deepEqual(gates(['docs/a.md', '.github/dependabot.yml']), ['privacy', 'yamllint', 'schema', 'zizmor', 'process']);
     assert.deepEqual(gates(['docs/a.md', 'rulesets/phpmd.xml']), ['privacy', 'smells', 'negative']);
   });
 
   test('commit z samą dokumentacją pomija wszystkie ciężkie bramki i mówi, dlaczego', () => {
     const result = scope.classify(['docs/a.md', 'README.md']);
     assert.deepEqual(result.gates, ['privacy']);
-    assert.deepEqual(result.skipped.map(item => item.gate), ['lint', 'stan', 'smells', 'test', 'negative', 'process']);
+    assert.deepEqual(result.skipped.map(item => item.gate), ['shellcheck', 'yamllint', 'actionlint', 'schema', 'pinact', 'zizmor', 'lint', 'stan', 'smells', 'test', 'negative', 'process']);
     assert.ok(result.skipped.every(item => /brak plików wyzwalających/.test(item.reason)));
-    assert.match(scope.describe(result).join('\n'), /pominięte \(nic tu nie sprawdzą\): lint \[/);
+    assert.match(scope.describe(result).join('\n'), /pominięte \(nic tu nie sprawdzą\): shellcheck \[/);
   });
 });
 
@@ -94,7 +101,7 @@ describe('fail-closed (kontrole ujemne): niepewność daje pełny zestaw', () =>
   });
 
   test('zmiana mechanizmu bramek uruchamia wszystko', () => {
-    for (const file of ['.githooks/pre-commit', 'scripts/quality/hook-scope.js', 'test/hook-scope.test.js']) {
+    for (const file of ['.githooks/pre-commit', 'scripts/quality/hook-scope.js', 'test/hook-scope.test.js', 'scripts/ci/github-gate.sh']) {
       expectFull(scope.classify([file]), /zmiana mechanizmu/);
     }
   });

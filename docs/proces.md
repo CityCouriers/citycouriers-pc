@@ -49,6 +49,12 @@ bramki, gdy jest w zakresie i zostało zmienione po starcie, albo gdy recenzent 
 | `negative-controls` | Każda bramka zatrzymuje znany błąd ([bramki.md](bramki.md)) |
 | `privacy` | Brak ścieżek maszyn, katalogów domowych i adresów e-mail |
 | `secret-scan` | gitleaks na historii, z kontrolą na sztucznym tokenie |
+| `actionlint` | Workflow GitHub Actions: składnia, wyrażenia, skrypty `run:` przez ShellCheck |
+| `zizmor` | Bezpieczeństwo workflow (persona pedantic, z tokenem: audyty online) |
+| `yamllint` | Styl i poprawność YAML (`.yamllint.yaml`) |
+| `schema` | check-jsonschema: workflow, `dependabot.yml`, konfiguracja zgłoszeń |
+| `pinact` | Akcje przypięte do pełnego SHA z komentarzem wersji |
+| `shellcheck` | Skrypty `.sh` i hooki |
 | `process-tests` | Testy skryptów procesu: bramka audytu, etykiety, `quality-gate` |
 | `quality-gate` | Zbiorczo: każdy powyższy job musi mieć wynik `success` |
 
