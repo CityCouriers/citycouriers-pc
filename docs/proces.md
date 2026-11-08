@@ -20,6 +20,12 @@ Recenzent (strona inna niż autor treści) rozstrzyga komentarzem `/audit-ok` al
 stan do `audit:pending`. Etykietami `audit:*` zarządza workflow, nie ręka. Bramka jest konwencją, a nie zamkiem:
 GitHub nie potrafi zablokować pracy nad zgłoszeniem, a etykieta jest sygnałem dla człowieka i agenta.
 
+**Warunek działania:** członkostwo osoby audytującej w organizacji musi być **publiczne**. Przy ukrytym członkostwie
+`GITHUB_TOKEN` (nie członek) widzi autora komentarza jako `CONTRIBUTOR`, a bramka przyjmuje tylko `OWNER`, `MEMBER`
+i `COLLABORATOR`, więc poprawny werdykt jest ignorowany. Listy nie rozszerzamy o `CONTRIBUTOR`, bo to także każdy, kogo PR
+został scalony. Powód odrzucenia jest wypisany w logu przebiegu i w podsumowaniu (`pominięto N komend z powodu
+author_association`).
+
 Bramka działa od północy UTC w dniu założenia repo (2026-11-08); data startu jest w
 `.github/workflows/issue-audit.yml` i nie wolno jej cofać (cichy backfill całego archiwum). Zgłoszenie wchodzi do
 bramki, gdy jest w zakresie i zostało zmienione po starcie, albo gdy recenzent rozstrzygnie je komendą.

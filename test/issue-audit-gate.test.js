@@ -1260,3 +1260,51 @@ describe('#231 powody wyniku są jedynym śladem w logu przebiegu', () => {
     assert.equal(gate.latestDecision([noAssociation], NEW, DEFAULT_CONFIG, 'gpt'), null);
   });
 });
+
+describe('diagnoza odrzucenia komendy przez author_association', () => {
+  // Zdarzenie z produkcji: GITHUB_TOKEN widzi autora z ukrytym członkostwem w organizacji jako CONTRIBUTOR, więc
+  // poprawny werdykt ChatGPT był odrzucany po cichu jako „brak rozstrzygnięcia”.
+  const claudeIssue = (over = {}) => issue(Object.assign({
+    labels: ['P2', 'T2', 'by:agent'], body: 'Specyfikacja.\n\n' + SIGN_CLAUDE, app: ''
+  }, over));
+  const gptVerdict = (kind, createdAt, extra = {}) => cmd(kind, createdAt, Object.assign({
+    body: '/audit-' + kind + '\n\nUzasadnienie.\n\n' + SIGN_GPT, app: GPT_APP
+  }, extra));
+
+  test('werdykt od CONTRIBUTOR zostaje odrzucony (lista nie jest rozszerzana), ale powód to mówi', () => {
+    const result = reconcile(claudeIssue({ comments: [gptVerdict('ok', LATER, { authorAssociation: 'CONTRIBUTOR' })] }));
+    assert.equal(result.label, AUDIT_PENDING);
+    assert.match(result.reason, /pominięto 1 komend\(ę\/y\) z powodu author_association: CONTRIBUTOR/);
+    assert.match(result.reason, /dozwolone: OWNER, MEMBER, COLLABORATOR/);
+    assert.match(result.reason, /ustaw członkostwo jako publiczne/);
+  });
+
+  test('ten sam werdykt od MEMBER rozstrzyga (kontrola pozytywna)', () => {
+    const result = reconcile(claudeIssue({ comments: [gptVerdict('ok', LATER, { authorAssociation: 'MEMBER' })] }));
+    assert.equal(result.label, AUDIT_OK);
+    assert.doesNotMatch(result.reason, /pominięto/);
+  });
+
+  test('brak komend i komentarze niebędące komendami nie dają podpowiedzi, a powód zostaje dokładnie taki jak dotąd', () => {
+    const plain = { body: 'Zwykły komentarz.', authorAssociation: 'CONTRIBUTOR', createdAt: LATER, app: '', lastEditedAt: null };
+    const none = reconcile(claudeIssue({ comments: [] }));
+    assert.equal(none.reason, 'brak ważnego rozstrzygnięcia dla rewizji ' + NEW);
+    assert.equal(reconcile(claudeIssue({ comments: [plain] })).reason, none.reason);
+  });
+
+  test('komenda starsza od bariery rewizji nie jest zgłaszana, brak association to „brak”', () => {
+    const old = gptVerdict('ok', '2026-09-01T10:00:00Z', { authorAssociation: 'CONTRIBUTOR' });
+    assert.doesNotMatch(reconcile(claudeIssue({ comments: [old] })).reason, /pominięto/);
+    const missing = gptVerdict('ok', LATER, { authorAssociation: undefined });
+    assert.match(reconcile(claudeIssue({ comments: [missing] })).reason, /author_association: brak/);
+  });
+
+  test('wiele odrzuconych komend: liczba i unikalne wartości', () => {
+    const comments = [
+      gptVerdict('ok', LATER, { authorAssociation: 'CONTRIBUTOR' }),
+      gptVerdict('changes', LATER, { authorAssociation: 'CONTRIBUTOR' }),
+      gptVerdict('ok', LATER, { authorAssociation: 'NONE' })
+    ];
+    assert.match(reconcile(claudeIssue({ comments })).reason, /pominięto 3 komend\(ę\/y\) z powodu author_association: CONTRIBUTOR, NONE \(/);
+  });
+});
