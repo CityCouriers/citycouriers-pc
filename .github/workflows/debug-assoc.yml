@@ -1,0 +1,29 @@
+name: Debug association (tymczasowy)
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+# Uprawnienia nadawane na poziomie jobu (najmniejsze potrzebne).
+permissions: {}
+
+concurrency:
+  group: debug-assoc-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  debug:
+    name: Debug association
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: read  # odczyt komentarzy zgłoszenia #37 (tymczasowa diagnostyka)
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: CityCouriers/pc
+    steps:
+      - name: REST i GraphQL
+        run: |
+          gh api "repos/$REPO/issues/37/comments" --jq '.[]|"REST    author_association=\(.author_association)"'
+          query='{repository(owner:"CityCouriers",name:"pc"){issue(number:37){comments(first:5){nodes{authorAssociation}}}}}'
+          gh api graphql -f query="$query" --jq '.data.repository.issue.comments.nodes[]|"GraphQL authorAssociation=\(.authorAssociation)"'
