@@ -20,7 +20,7 @@ w changelogu pod nagłówkiem **Changed (breaking)**.
 
 ## Proces wydania
 
-1. Zmiany idą przez Pull Request z zielonym `ci-gate`.
+1. Zmiany idą przez Pull Request z zielonym `quality-gate`.
 2. Commit wydania zmienia `Version::CURRENT` w `src/Version.php` na wersję bez sufiksu `-dev` i przenosi wpisy z
    `[Unreleased]` do sekcji `## [X.Y.Z] - RRRR-MM-DD` w `CHANGELOG.md`.
 3. Tag `vX.Y.Z` na tym commicie. Workflow `Release` uruchamia `scripts/ci/check-release.sh` (format SemVer, zgodność

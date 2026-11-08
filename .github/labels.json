@@ -1,0 +1,312 @@
+{
+  "version": 1,
+  "repo": "CityCouriers/citycouriers-pc",
+  "prune": false,
+  "color_rules": {
+    "priority": "warm colors = urgency",
+    "tier": "cool colors = operational risk",
+    "blocked": "near-black = blocked, not urgent",
+    "area": "one green color for the whole area:* family",
+    "policy": "one purple color for the whole policy:* family",
+    "audit": "one teal color for the whole audit:* family",
+    "by": "one slate color for the whole by:* family",
+    "scope": "jeden niebieski dla etykiet zakresu pracy (bramka, silnik, epik)",
+    "origin": "żółty = kod do przeniesienia (wymaga przeglądu), zielony = kod pisany od zera"
+  },
+  "families": {
+    "priority": {
+      "prefix": null,
+      "cardinality": "exactly 1 per open Issue"
+    },
+    "tier": {
+      "prefix": null,
+      "cardinality": "dokładnie 1 dla pracy, która może zmienić wynik bramki u konsumentów"
+    },
+    "state": {
+      "prefix": null,
+      "cardinality": "0 or more"
+    },
+    "change-type": {
+      "prefix": null,
+      "cardinality": "0 or more",
+      "note": "Names stay compatible with Release Drafter and Conventional Commits."
+    },
+    "area": {
+      "prefix": "area:",
+      "color": "0E8A16",
+      "cardinality": "1 or more"
+    },
+    "policy": {
+      "prefix": "policy:",
+      "color": "8B5CF6",
+      "cardinality": "0 or more"
+    },
+    "audit": {
+      "prefix": "audit:",
+      "color": "0FA5A5",
+      "cardinality": "0 lub 1",
+      "note": "Stan audytu specyfikacji (#139). Etykietami zarządza workflow issue-audit.yml; nie ustawiaj ich ręcznie poza sytuacją awaryjną."
+    },
+    "by": {
+      "prefix": "by:",
+      "color": "475569",
+      "cardinality": "0 lub 1",
+      "note": "Kto napisał specyfikację. Nadaje ją wyłącznie agent lokalny dla własnych Issue; BRAK etykiety znaczy „autorem jest recenzent zewnętrzny”. Rozstrzyga, która strona prowadzi audyt (cross-audyt)."
+    },
+    "scope": {
+      "prefix": null,
+      "cardinality": "0 lub 1",
+      "note": "Rodzaj pracy w planie bramek: bramka w paczce, bramka tego repo, silnik, epik do rozbicia."
+    },
+    "origin": {
+      "prefix": null,
+      "cardinality": "0 lub 1",
+      "note": "Skąd pochodzi kod: przenoszony z repo źródłowego (przegląd pochodzenia i licencji przed importem) albo pisany od zera."
+    }
+  },
+  "labels": [
+    {
+      "name": "P0",
+      "color": "B60205",
+      "description": "Natychmiast — blokuje wdrożenie, produkcję albo krytyczną ścieżkę.",
+      "family": "priority"
+    },
+    {
+      "name": "P1",
+      "color": "F97316",
+      "description": "Wysoka — następne zadanie po bieżącym P0 / do zrobienia w tym cyklu.",
+      "family": "priority"
+    },
+    {
+      "name": "P2",
+      "color": "EAB308",
+      "description": "Średnia — zaplanowane, wartościowe, ale nie blokuje bieżącej pracy.",
+      "family": "priority"
+    },
+    {
+      "name": "P3",
+      "color": "B8C0CC",
+      "description": "Niska — backlog oportunistyczny; realizować gdy koszt jest uzasadniony.",
+      "family": "priority"
+    },
+    {
+      "name": "P4",
+      "color": "D4D4D8",
+      "description": "Kosmetyka — tylko przy okazji innej pracy, nie jako osobne zadanie.",
+      "family": "priority"
+    },
+    {
+      "name": "T1",
+      "color": "93C5FD",
+      "description": "Niskie ryzyko — lokalny scope, łatwy rollback, brak krytycznych kontraktów.",
+      "family": "tier"
+    },
+    {
+      "name": "T2",
+      "color": "3B82F6",
+      "description": "Średnie ryzyko — cross-file/workflow albo zmiana zachowania produkcyjnego.",
+      "family": "tier"
+    },
+    {
+      "name": "T3",
+      "color": "4338CA",
+      "description": "Wysokie ryzyko — auth/security, deploy boundary lub wysoki koszt błędu.",
+      "family": "tier"
+    },
+    {
+      "name": "blocked",
+      "color": "111827",
+      "description": "Wstrzymane do spełnienia warunku: zależność, decyzja, dane albo inne Issue/PR.",
+      "family": "state"
+    },
+    {
+      "name": "needs-triage",
+      "color": "FEF2C0",
+      "description": "Czeka na triage — nie ma jeszcze kompletnego priorytetu/zakresu/ryzyka.",
+      "family": "state"
+    },
+    {
+      "name": "monitoring",
+      "color": "6B7280",
+      "description": "Zmiana wdrożona lub zamrożona; czekamy na dane/okno pomiarowe przed decyzją.",
+      "family": "state"
+    },
+    {
+      "name": "bug",
+      "color": "d73a4a",
+      "description": "Something isn't working.",
+      "family": "change-type"
+    },
+    {
+      "name": "chore",
+      "color": "ededed",
+      "description": "Maintenance task without user-facing functionality.",
+      "family": "change-type"
+    },
+    {
+      "name": "documentation",
+      "color": "0075ca",
+      "description": "Documentation improvement or correction.",
+      "family": "change-type"
+    },
+    {
+      "name": "enhancement",
+      "color": "a2eeef",
+      "description": "New feature, capability or meaningful behaviour improvement.",
+      "family": "change-type"
+    },
+    {
+      "name": "fix",
+      "color": "E99695",
+      "description": "Naprawa defektu; patch-level change compatible with Release Drafter.",
+      "family": "change-type"
+    },
+    {
+      "name": "refactor",
+      "color": "C2E0C6",
+      "description": "Refaktoryzacja bez zamierzonej zmiany zachowania produkcyjnego.",
+      "family": "change-type"
+    },
+    {
+      "name": "policy:security",
+      "color": "8B5CF6",
+      "description": "Bezpieczeństwo: auth, sekrety, permissions, input i publiczne endpointy.",
+      "family": "policy"
+    },
+    {
+      "name": "policy:fail-fast",
+      "color": "8B5CF6",
+      "description": "Błąd ma być głośny; nie ukrywaj błędu przez cichy fallback.",
+      "family": "policy"
+    },
+    {
+      "name": "policy:resilience",
+      "color": "8B5CF6",
+      "description": "Degraduj się łagodnie i działaj dalej, gdy taki fallback jest zamierzony.",
+      "family": "policy"
+    },
+    {
+      "name": "audit:pending",
+      "color": "0FA5A5",
+      "description": "Specyfikacja czeka na audyt; praca się nie zaczyna.",
+      "family": "audit"
+    },
+    {
+      "name": "audit:ok",
+      "color": "0FA5A5",
+      "description": "Specyfikacja zaakceptowana w obecnej wersji treści.",
+      "family": "audit"
+    },
+    {
+      "name": "audit:changes",
+      "color": "0FA5A5",
+      "description": "Recenzent zgłosił zastrzeżenia do specyfikacji; issue wraca do autora.",
+      "family": "audit"
+    },
+    {
+      "name": "by:agent",
+      "color": "475569",
+      "description": "Specyfikację napisał agent lokalny; audytuje recenzent zewnętrzny.",
+      "family": "by"
+    },
+    {
+      "name": "area:core",
+      "color": "0E8A16",
+      "description": "Silnik, CLI, kontrakt konfiguracji pc.json i uruchamianie bramek.",
+      "family": "area"
+    },
+    {
+      "name": "area:gates",
+      "color": "0E8A16",
+      "description": "Konkretne bramki jakości: narzędzie, tryb, kontrola ujemna.",
+      "family": "area"
+    },
+    {
+      "name": "area:ci",
+      "color": "0E8A16",
+      "description": "Workflowy GitHub Actions, hooki git i bramki jakości samego repo.",
+      "family": "area"
+    },
+    {
+      "name": "area:tests",
+      "color": "0E8A16",
+      "description": "Testy w tests/ i test/, fikstury i kontrole ujemne.",
+      "family": "area"
+    },
+    {
+      "name": "area:docs",
+      "color": "0E8A16",
+      "description": "README, docs/, CHANGELOG i karty bramek.",
+      "family": "area"
+    },
+    {
+      "name": "area:release",
+      "color": "0E8A16",
+      "description": "Schemat wydań, tagi, GitHub Release i dystrybucja przez Composera.",
+      "family": "area"
+    },
+    {
+      "name": "area:github",
+      "color": "0E8A16",
+      "description": "Zgłoszenia, PR, etykiety, ochrona main i automatyzacja repozytorium.",
+      "family": "area"
+    },
+    {
+      "name": "area:security",
+      "color": "0E8A16",
+      "description": "Sekrety, prywatność danych w repo publicznym, uprawnienia workflowów.",
+      "family": "area"
+    },
+    {
+      "name": "area:wordpress",
+      "color": "0E8A16",
+      "description": "Moduł wordpress: PHPCS z WPCS i PHPCompatibility dla wtyczek i motywów.",
+      "family": "area"
+    },
+    {
+      "name": "area:laravel",
+      "color": "0E8A16",
+      "description": "Moduł laravel: bramki opcjonalne dla aplikacji Laravel.",
+      "family": "area"
+    },
+    {
+      "name": "bramka-pc",
+      "color": "0E8A16",
+      "description": "Bramka w paczce pc: jedna bramka, jedno narzędzie.",
+      "family": "scope"
+    },
+    {
+      "name": "bramka-repo",
+      "color": "1D76DB",
+      "description": "Bramka dla commitów i CI tego repozytorium.",
+      "family": "scope"
+    },
+    {
+      "name": "silnik",
+      "color": "5319E7",
+      "description": "Wspólny silnik uruchamiania bramek.",
+      "family": "scope"
+    },
+    {
+      "name": "epik",
+      "color": "B60205",
+      "description": "Do rozbicia na zgłoszenia: jedna bramka, jedno narzędzie.",
+      "family": "scope"
+    },
+    {
+      "name": "kod-z-nexus",
+      "color": "FBCA04",
+      "description": "Przenosi kod z repo źródłowego: przegląd pochodzenia i licencji przed importem.",
+      "family": "origin"
+    },
+    {
+      "name": "nowy-kod",
+      "color": "C2E0C6",
+      "description": "Kod pisany od zera, bez przenoszenia.",
+      "family": "origin"
+    }
+  ],
+  "migrations": {
+    "delete": []
+  }
+}

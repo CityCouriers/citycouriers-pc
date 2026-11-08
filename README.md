@@ -50,6 +50,7 @@ Przykład `pc.json`:
 | [docs/index.md](docs/index.md) | Spis dokumentacji |
 | [docs/bramki.md](docs/bramki.md) | Kontrakt bramek i kontroli ujemnych |
 | [docs/konfiguracja.md](docs/konfiguracja.md) | `pc.json`, moduły, instalacja |
+| [docs/proces.md](docs/proces.md) | Zgłoszenia, etykiety P/T, audyt, PR i kontrole CI |
 | [docs/wydania.md](docs/wydania.md) | SemVer dla bramek, proces wydania |
 | [docs/plan-przeniesienia.md](docs/plan-przeniesienia.md) | Co i kiedy trafia do paczki |
 
@@ -59,10 +60,11 @@ Przykład `pc.json`:
 composer install
 composer hooks    # włącza hook pre-commit
 composer check    # Pint, PHPStan, PHPMD, testy, kontrole ujemne
+npm test          # testy skryptów procesu (bramka audytu, etykiety, quality-gate)
 composer privacy  # skan ścieżek maszyn i adresów e-mail
 ```
 
-Zmiany idą przez Pull Request z zielonym `ci-gate`. Commit przez hook, bez `--no-verify`.
+Zmiany idą przez Pull Request z zielonym `quality-gate`. Commit przez hook, bez `--no-verify`.
 
 ## Licencja
 
