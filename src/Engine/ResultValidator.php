@@ -104,12 +104,11 @@ final class ResultValidator
      */
     private function checkChecked(Gate $gate, GateResult $result): void
     {
-        if ($result->status !== GateStatus::Passed && $result->status !== GateStatus::Failed) {
-            return;
-        }
-
         if ($result->checked !== null && $result->checked->count < 0) {
             throw new EngineException(sprintf('Bramka „%s” zwróciła ujemną liczbę sprawdzonych jednostek (%d).', $gate->name(), $result->checked->count));
+        }
+        if ($result->status !== GateStatus::Passed && $result->status !== GateStatus::Failed) {
+            return;
         }
 
         $declared = $gate->checkedUnit();

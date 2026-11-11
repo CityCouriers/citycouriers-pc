@@ -40,24 +40,35 @@ final class ReportBuilder
 
     /**
      * @param list<GateEntry> $entries
+     * @param list<string> $finalizeFailures awarie `finalize` dopisywane do komunikatu błędu, także po sygnale i błędzie silnika
      */
-    public function fromRun(array $entries, GateContext $context, ?int $signal, ?string $engineError): RunReport
+    public function fromRun(array $entries, GateContext $context, ?int $signal, ?string $engineError, array $finalizeFailures = []): RunReport
     {
         $notScanned = array_filter($entries, static fn(GateEntry $entry): bool => $entry->result->status === GateStatus::NotScanned) !== [];
 
         if ($signal !== null) {
             $name = $signal === self::SIGINT ? 'SIGINT' : 'SIGTERM';
-            $error = new RunError('interrupted', sprintf('Bieg przerwany sygnałem %s.', $name));
+            $error = new RunError('interrupted', $this->withFailures(sprintf('Bieg przerwany sygnałem %s.', $name), $finalizeFailures));
 
             return new RunReport(RunStatus::Interrupted, $signal === self::SIGINT ? 130 : 143, false, $context->scope, $context->diffBase, $entries, $error);
         }
         if ($engineError !== null) {
-            return new RunReport(RunStatus::Error, 5, false, $context->scope, $context->diffBase, $entries, new RunError('engine_error', $engineError));
+            return new RunReport(RunStatus::Error, 5, false, $context->scope, $context->diffBase, $entries, new RunError('engine_error', $this->withFailures($engineError, $finalizeFailures)));
         }
 
         [$status, $code] = $this->verdict($entries);
 
         return new RunReport($status, $code, !$notScanned, $context->scope, $context->diffBase, $entries, null);
+    }
+
+    /**
+     * @param list<string> $failures
+     */
+    private function withFailures(string $message, array $failures): string
+    {
+        $extra = array_filter($failures, static fn(string $failure): bool => !str_contains($message, $failure));
+
+        return implode(' ', [$message, ...$extra]);
     }
 
     /**

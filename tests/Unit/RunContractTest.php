@@ -10,6 +10,8 @@ use CityCouriers\Pc\Engine\GateContext;
 use CityCouriers\Pc\Engine\GateMode;
 use CityCouriers\Pc\Engine\GateResult;
 use CityCouriers\Pc\Engine\GateStatus;
+use CityCouriers\Pc\Engine\Reason;
+use CityCouriers\Pc\Engine\ReasonCode;
 use CityCouriers\Pc\Engine\ResultFactory;
 use CityCouriers\Pc\Engine\Severity;
 use CityCouriers\Pc\Tests\Support\EventLog;
@@ -365,6 +367,64 @@ it('walidator: ujemne checked.count to błąd silnika (kod 5), 0 i dodatnie zach
 
     [$positiveResult] = Harness::runJson([contractGate('format')]);
     expect($positiveResult->exitCode)->toBe(0);
+});
+
+it('finalize: SIGINT → wyjątek w finalize zachowuje kod 130, a awaria jest w error, gates[] i na stderr', function (): void {
+    $log = new EventLog();
+    $interrupt = new FakeInterrupt();
+    $first = contractGate('format', log: $log)
+        ->does(static function () use ($interrupt): GateResult {
+            $interrupt->raise(2);
+
+            return (new ResultFactory())->passed(new Checked(CheckedUnit::Checks, 1));
+        })
+        ->withFinalize(static function (): GateResult {
+            throw new RuntimeException('stash nie wrócił');
+        });
+    $other = contractGate('phpmd', log: $log);
+    [$result, $document] = Harness::runJson([$first, $other], [], null, null, $interrupt);
+
+    expect($result->exitCode)->toBe(130)
+        ->and(Harness::at($document, 'status'))->toBe('interrupted')
+        ->and(Harness::at($document, 'complete'))->toBeFalse()
+        ->and(Harness::at($document, 'error.code'))->toBe('interrupted')
+        ->and(Harness::at($document, 'error.message'))->toContain('SIGINT')->toContain('stash nie wrócił')
+        ->and($result->stderr)->toContain('SIGINT')->toContain('stash nie wrócił')
+        ->and(Harness::at($document, 'gates.0.reason.code'))->toBe('gate_crashed')
+        ->and(Harness::at($document, 'gates.0.reason.message'))->toContain('stash nie wrócił')
+        ->and($log->lines)->toBe(['run:format', 'finalize:format:interrupted'])
+        ->and(Harness::schemaErrors($document))->toBe([]);
+});
+
+it('finalize: błąd silnika → wyjątek w finalize: obie przyczyny w error i na stderr, pozostałe finalize biegną', function (): void {
+    $log = new EventLog();
+    $boom = static function (): GateResult {
+        throw new RuntimeException('finalize padło');
+    };
+    $first = contractGate('format', log: $log)->withFinalize($boom);
+    $broken = contractGate('phpstan', log: $log)->does(fn(): GateResult => new GateResult(GateStatus::Skipped));
+    [$result, $document] = Harness::runJson([$first, $broken]);
+
+    expect($result->exitCode)->toBe(5)
+        ->and(Harness::at($document, 'complete'))->toBeFalse()
+        ->and(Harness::at($document, 'error.message'))->toContain('wymaga powodu')->toContain('finalize padło')
+        ->and($result->stderr)->toContain('finalize padło')
+        ->and(Harness::at($document, 'gates.0.reason.code'))->toBe('gate_crashed')
+        ->and($log->lines)->toBe(['run:format', 'run:phpstan', 'finalize:phpstan:engine_error', 'finalize:format:engine_error'])
+        ->and(Harness::schemaErrors($document))->toBe([]);
+});
+
+it('walidator: ujemne checked.count w not_scanned i skipped też to kod 5, a dokument zgodny ze schematem', function (): void {
+    $notScanned = contractGate('format')->does(fn(): GateResult => new GateResult(GateStatus::NotScanned, new Reason(ReasonCode::ToolMissing, 'brak'), new Checked(CheckedUnit::Checks, -1)));
+    [$result, $document] = Harness::runJson([$notScanned]);
+
+    expect($result->exitCode)->toBe(5)
+        ->and(Harness::at($document, 'error.message'))->toContain('ujemną liczbę')
+        ->and(Harness::schemaErrors($document))->toBe([]);
+
+    $skipped = contractGate('format')->does(fn(): GateResult => new GateResult(GateStatus::Skipped, new Reason(ReasonCode::NoMatchingFiles, 'brak plików'), new Checked(CheckedUnit::Checks, -1)));
+    [$skippedResult] = Harness::runJson([$skipped]);
+    expect($skippedResult->exitCode)->toBe(5);
 });
 
 it('finalize: bramka, której faza główna się nie rozpoczęła, go nie dostaje', function (): void {

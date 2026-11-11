@@ -30,7 +30,7 @@ final readonly class Runner
 
         $entries = array_map(static fn(Outcome $outcome): GateEntry => $outcome->toEntry(), $outcomes);
 
-        return $this->reports->fromRun($entries, $context, $this->executor->signal(), $state->engineError);
+        return $this->reports->fromRun($entries, $context, $this->executor->signal(), $state->engineError, $state->finalizeFailures);
     }
 
     private function execute(string $name, GateContext $context, RunState $state): Outcome

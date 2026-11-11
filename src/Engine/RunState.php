@@ -12,6 +12,9 @@ final class RunState
 {
     public ?string $engineError = null;
 
+    /** @var list<string> awarie fazy finalize (przywrócenie stanu mogło się nie dokonać), zawsze widoczne w `error` */
+    public array $finalizeFailures = [];
+
     public bool $gateException = false;
 
     public ?string $blockedBy = null;

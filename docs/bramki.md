@@ -106,7 +106,8 @@ Egzekwuje je runner, nie pojedyncza bramka:
    `finalize` to osobny, widoczny fakt: bieg kończy się kodem 5 (`error.code` `engine_error`, komunikat nazywa bramkę i wyjątek, bo
    przywrócenie stanu mogło się nie dokonać). `failed` zostaje `failed` (dochodzi diagnostyka z regułą `finalize_crashed`), `not_scanned`
    dostaje powód `gate_crashed` z wcześniejszym powodem w komunikacie, pozostałe stany stają się `not_scanned` / `gate_crashed`.
-   Pozostałe `finalize` się wykonują. Sygnał w
+   Pozostałe `finalize` się wykonują. Awaria `finalize` trafia do `error.message` także wtedy, gdy kod wyjścia wyznacza sygnał (130 / 143)
+   albo wcześniejszy błąd silnika, więc jest widoczna w JSON i na stderr; kod wyjścia się wtedy nie zmienia. Sygnał w
    trakcie `finalize` jest odroczony do jego końca (silnik tylko go zapamiętuje). SIGKILL i utrata zasilania są poza zasięgiem silnika:
    bramka odpowiada za trwały zapis i odzyskiwanie. Kod wyjścia liczy się po `finalize`, a po przerwaniu pozostaje 130 / 143.
 

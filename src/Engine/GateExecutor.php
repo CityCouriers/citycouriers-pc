@@ -69,6 +69,7 @@ final readonly class GateExecutor
             $after = $this->normalize($gate, $gate->finalize($context, $before, $cause), $state);
         } catch (Throwable $exception) {
             $text = sprintf('Wyjątek w fazie finalize bramki „%s”: %s. Przywrócenie stanu po bramce mogło się nie dokonać.', $gate->name(), $exception->getMessage());
+            $state->finalizeFailures[] = $text;
             $state->engineError ??= $text;
 
             return $this->crash->worsen($gate, $before, $text);
