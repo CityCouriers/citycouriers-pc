@@ -41,7 +41,7 @@ const TRIGGERS = {
   lint: '.php, pint.json, composer.json',
   stan: '.php, phpstan.neon, composer.json',
   smells: 'src/, bin/pc, rulesets/, composer.json',
-  test: '.php, tests/Fixtures/, scripts/ci/*.sh, phpunit.xml.dist, composer.json',
+  test: '.php, tests/Fixtures/, docs/schema/*.json, scripts/ci/*.sh, phpunit.xml.dist, composer.json',
   negative: 'src/, bin/pc, rulesets/, tests/Fixtures/, scripts/ci/*.sh, pint.json, phpstan.neon, composer.json',
   process: 'scripts/quality/, test/, .github/, package.json',
 };
@@ -64,6 +64,8 @@ const RULES = [
   { name: 'src-bin', gates: [...PHP_CHAIN, 'privacy'], match: path => path.startsWith('src/') || path === 'bin/pc' },
   { name: 'rulesets', gates: ['smells', 'negative', 'privacy'], match: path => path.startsWith('rulesets/') },
   { name: 'github-fixtures', gates: [...GITHUB_GATES, 'privacy'], match: path => path.startsWith('tests/Fixtures/negative-github/') },
+  // Schemat JSON wyjścia `pc run` jest kontraktem sprawdzanym przez testy (tests/Unit/RunContractTest.php).
+  { name: 'schema-docs', gates: ['test', 'privacy'], match: path => /^docs\/schema\/[^/]+\.json$/.test(path) },
   { name: 'fixtures', gates: ['test', 'negative', 'privacy'], match: path => path.startsWith('tests/Fixtures/') },
   { name: 'tests-php', gates: ['lint', 'stan', 'test', 'privacy'], match: path => path.startsWith('tests/') && path.endsWith('.php') },
   { name: 'ci-shell', gates: ['test', 'negative', 'shellcheck', 'privacy'], match: path => /^scripts\/ci\/[^/]+\.sh$/.test(path) },

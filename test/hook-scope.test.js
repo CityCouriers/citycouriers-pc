@@ -37,6 +37,7 @@ describe('tabela: plik → bramki', () => {
     ['rulesets/phpmd.xml', ['privacy', 'smells', 'negative']],
     ['tests/Unit/ApplicationTest.php', ['privacy', 'lint', 'stan', 'test']],
     ['tests/Fixtures/valid-pc.json', ['privacy', 'test', 'negative']],
+    ['docs/schema/pc-run-1.json', ['privacy', 'test']],
     ['tests/Fixtures/negative/bad-type.php', ['privacy', 'test', 'negative']],
     ['scripts/ci/check-release.sh', ['privacy', 'shellcheck', 'test', 'negative']],
     ['scripts/quality/issue-audit-gate.js', ['privacy', 'process']],
@@ -81,6 +82,8 @@ describe('fail-closed (kontrole ujemne): niepewność daje pełny zestaw', () =>
     expectFull(scope.classify(['nieznany/plik.txt']), /brak reguły/);
     expectFull(scope.classify(['docs/skrypt.php']), /brak reguły/);
     expectFull(scope.classify(['docs/dane.json']), /brak reguły/);
+    expectFull(scope.classify(['docs/schema/skrypt.php']), /brak reguły/);
+    expectFull(scope.classify(['docs/schema/glebiej/x.json']), /brak reguły/);
     expectFull(scope.classify(['README.MD']), /brak reguły/);
     expectFull(scope.classify(['.github-poza.yaml']), /brak reguły/);
     expectFull(scope.classify(['plik.php']), /brak reguły/);

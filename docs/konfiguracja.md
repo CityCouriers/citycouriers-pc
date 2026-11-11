@@ -17,6 +17,12 @@ reguł i moduły. Poprawność sprawdza `vendor/bin/pc config:validate`.
 Ścieżki muszą być względne i bez `..`, a katalogi domowe i dyski są odrzucane. Konfiguracja trafia do
 publicznych repo i nie może nieść ścieżek z maszyny autora.
 
+## Uruchomienie
+
+`vendor/bin/pc run` czyta `pc.json` z bieżącego katalogu (inny plik: `--config=<plik>`) i uruchamia bramki włączone w `gates`
+(wartość `true`). Wyłączona bramka (`false`) nie ma wpisu w raporcie. Brak pliku, błędny plik i brak jakiejkolwiek włączonej
+bramki to kod 3 (`config_error`), nigdy zielone 0. Kontrakt wyniku i kody wyjścia: [bramki.md](bramki.md#silnik-pc-run-kontrakt-wyniku).
+
 ## Moduły
 
 Rdzeń `pc` nie zależy od Laravela ani od WordPressa. Reguły projektowe są dodatkami włączanymi w repo konsumenta:
