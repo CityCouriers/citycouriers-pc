@@ -41,5 +41,7 @@ expect_fail "pint" "bad-style.php" vendor/bin/pint --test --preset per "$style_d
 expect_fail "phpstan" "bad-type.php" vendor/bin/phpstan analyse -c scripts/ci/phpstan-negative.neon --no-progress tests/Fixtures/negative/bad-type.php
 expect_fail "phpmd" "bad-smell.php" vendor/bin/phpmd analyze tests/Fixtures/negative/bad-smell.php --format text --ruleset rulesets/phpmd.xml
 expect_fail "config:validate" "Nieznana bramka" php bin/pc config:validate tests/Fixtures/negative/invalid-pc.json
+expect_fail "pc run: brak pc.json (kod 3, nigdy 0)" "config_error" php bin/pc run --format=json --config=tests/Fixtures/nie-ma.json
+expect_fail "pc run: bramka bez kodu (kod 4, nigdy 0)" "gate_not_implemented" php bin/pc run --format=json --config=tests/Fixtures/valid-pc.json
 
 exit "$status"

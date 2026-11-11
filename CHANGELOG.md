@@ -21,6 +21,14 @@ Pełny opis: [docs/wydania.md](docs/wydania.md).
 
 ### Added
 
+- Silnik bramek (zgłoszenie #3): `pc run` i `pc run --staged` z opcjami `--format=text|json`, `--base=<rewizja>` i `--config=<plik>`. Interfejs `Gate`
+  (tryb, bramka wstępna, jednostka `checked`, wyzwalacze, opcjonalna faza `finalize`), runner, rejestr, walidacja wyniku, raport zbiorczy.
+  Cztery stany wyniku (`passed`, `failed`, `skipped`, `not_scanned`) z zamkniętym zbiorem kodów powodu, kody wyjścia 0, 1, 2, 3, 4, 5, 130 i 143
+  z jawną regułą pierwszeństwa, reguły fail-closed (brak narzędzia, wyjątek bramki, bramka bez kodu, zero sprawdzonych jednostek i pusty stage
+  nie dają zielonego), bramka raportująca nigdy nie zmienia kodu, ale wynik niepełny jest głośny ("NIEPEŁNY", `complete: false`).
+  Wersjonowany schemat JSON (`docs/schema/pc-run-1.json`, `schema_version: 1`) z polami zawsze obecnymi i `null` dla braku danych.
+  Kontrakt: `docs/bramki.md`. Rejestr nie ma jeszcze żadnej bramki, więc włączone bramki dają `not_scanned` / `gate_not_implemented` (kod 4).
+  Testy Pest (kontrakt, wyniki mieszane, przypadki brzegowe, schemat, git, SIGINT w podprocesie) i kontrole ujemne w `scripts/ci/negative-controls.sh`.
 - Bramki plików GitHub, po jednej na narzędzie (zgłoszenia #5, #6, #43, #44, #45, #46): actionlint 1.7.12, ShellCheck,
   zizmor 1.32.0 (persona pedantic), yamllint 1.38.0, check-jsonschema 0.39.0, pinact 5.0.2. Wspólne źródło komend
   `scripts/ci/github-gate.sh` dla hooka i CI, kontrola ujemna każdego narzędzia (`tests/Fixtures/negative-github/`),

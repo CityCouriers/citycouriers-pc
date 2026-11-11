@@ -4,6 +4,8 @@
 declare(strict_types=1);
 
 use CityCouriers\Pc\Application;
+use CityCouriers\Pc\Engine\ProcessInterrupt;
+use CityCouriers\Pc\Engine\RunCommandFactory;
 
 // Instalacja jako zależność (vendor/citycouriers/pc/bin) albo praca w samym repo.
 foreach ([__DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php'] as $autoload) {
@@ -18,7 +20,7 @@ if (!class_exists(Application::class)) {
     exit(1);
 }
 
-$result = (new Application())->run(array_slice($argv, 1));
+$result = (new Application(new RunCommandFactory(new ProcessInterrupt())))->run(array_slice($argv, 1));
 
 if ($result->stdout !== '') {
     fwrite(STDOUT, $result->stdout);

@@ -1,0 +1,120 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/CityCouriers/pc/blob/main/docs/schema/pc-run-1.json",
+    "title": "pc run --format=json, schemat 1",
+    "description": "Dokument z `pc run --format=json`. Wszystkie pola są zawsze obecne, brak danych to null. Kontrakt: docs/bramki.md.",
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["schema_version", "tool", "command", "scope", "diff_base", "status", "exit_code", "complete", "summary", "gates", "error"],
+    "properties": {
+        "schema_version": {"const": 1},
+        "tool": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "version"],
+            "properties": {
+                "name": {"const": "pc"},
+                "version": {"type": "string", "minLength": 1}
+            }
+        },
+        "command": {"const": "run"},
+        "scope": {"enum": ["full", "staged", null]},
+        "diff_base": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40,64}$"},
+        "status": {"enum": ["passed", "failed", "usage_error", "config_error", "incomplete", "error", "interrupted"]},
+        "exit_code": {"enum": [0, 1, 2, 3, 4, 5, 130, 143]},
+        "complete": {"type": "boolean"},
+        "summary": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["gates", "passed", "failed", "skipped", "not_scanned", "blocking_failed", "reporting_failed"],
+            "properties": {
+                "gates": {"type": "integer", "minimum": 0},
+                "passed": {"type": "integer", "minimum": 0},
+                "failed": {"type": "integer", "minimum": 0},
+                "skipped": {"type": "integer", "minimum": 0},
+                "not_scanned": {"type": "integer", "minimum": 0},
+                "blocking_failed": {"type": "integer", "minimum": 0},
+                "reporting_failed": {"type": "integer", "minimum": 0}
+            }
+        },
+        "gates": {"type": "array", "items": {"$ref": "#/$defs/gate"}},
+        "error": {
+            "oneOf": [
+                {"type": "null"},
+                {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["code", "message", "hint"],
+                    "properties": {
+                        "code": {"enum": ["usage_error", "invalid_base", "config_error", "engine_error", "interrupted"]},
+                        "message": {"type": "string"},
+                        "hint": {"type": ["string", "null"]}
+                    }
+                }
+            ]
+        }
+    },
+    "$defs": {
+        "gate": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "mode", "status", "reason", "checked", "duration_ms", "diagnostics"],
+            "allOf": [
+                {"if": {"properties": {"status": {"enum": ["passed", "failed"]}}}, "then": {"properties": {"reason": {"type": "null"}}}},
+                {"if": {"properties": {"status": {"enum": ["skipped", "not_scanned"]}}}, "then": {"properties": {"reason": {"type": "object"}}}},
+                {"if": {"properties": {"status": {"const": "failed"}}}, "then": {"properties": {"diagnostics": {"minItems": 1}}}},
+                {"if": {"properties": {"status": {"enum": ["passed", "skipped", "not_scanned"]}}}, "then": {"properties": {"diagnostics": {"maxItems": 0}}}}
+            ],
+            "properties": {
+                "name": {"type": "string", "minLength": 1},
+                "mode": {"enum": ["blocking", "reporting"]},
+                "status": {"enum": ["passed", "failed", "skipped", "not_scanned"]},
+                "reason": {
+                    "oneOf": [
+                        {"type": "null"},
+                        {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["code", "message", "blocked_by"],
+                            "properties": {
+                                "code": {"enum": ["no_matching_files", "disabled_in_config", "tool_missing", "tool_failed", "gate_crashed", "gate_not_implemented", "missing_input", "nothing_checked", "timeout", "interrupted", "precondition_failed"]},
+                                "message": {"type": "string", "minLength": 1},
+                                "blocked_by": {"type": ["string", "null"]}
+                            }
+                        }
+                    ]
+                },
+                "checked": {
+                    "oneOf": [
+                        {"type": "null"},
+                        {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "required": ["unit", "count"],
+                            "properties": {
+                                "unit": {"enum": ["files", "tests", "checks"]},
+                                "count": {"type": "integer", "minimum": 0}
+                            }
+                        }
+                    ]
+                },
+                "duration_ms": {"type": ["integer", "null"], "minimum": 0},
+                "diagnostics": {"type": "array", "items": {"$ref": "#/$defs/diagnostic"}}
+            }
+        },
+        "diagnostic": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["rule", "file", "line", "column", "severity", "message", "hint"],
+            "properties": {
+                "rule": {"type": ["string", "null"]},
+                "file": {"type": ["string", "null"]},
+                "line": {"type": ["integer", "null"], "minimum": 1},
+                "column": {"type": ["integer", "null"], "minimum": 1},
+                "severity": {"enum": ["error", "warning"]},
+                "message": {"type": "string"},
+                "hint": {"type": ["string", "null"]}
+            }
+        }
+    }
+}

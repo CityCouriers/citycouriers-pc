@@ -5,7 +5,7 @@ analiza statyczna (PHPStan), zapachy kodu (PHPMD), formatowanie (Pint albo PHPCS
 i kontrole procesu. Ma działać tak samo w wielu repo: wspólny kod bramek w paczce, a wybór bramek,
 ścieżek i wyjątków w małym pliku `pc.json` repo-konsumenta.
 
-> **Status: szkielet (0.1.0).** Paczka ma wejście `bin/pc`, kontrakt konfiguracji i CI. Bramki są
+> **Status: szkielet (0.1.0), silnik w budowie.** Paczka ma wejście `bin/pc`, kontrakt konfiguracji, silnik `pc run` i CI. Bramki są
 > przenoszone z repo, w którym powstały, według [planu przeniesienia](docs/plan-przeniesienia.md).
 > Do czasu wydania 1.0.0 interfejs może się zmieniać.
 
@@ -15,7 +15,14 @@ i kontrole procesu. Ma działać tak samo w wielu repo: wspólny kod bramek w pa
 composer require --dev citycouriers/pc
 vendor/bin/pc --version
 vendor/bin/pc config:validate pc.json
+vendor/bin/pc run                  # włączone bramki; kody wyjścia 0, 1, 2, 3, 4, 5, 130
+vendor/bin/pc run --staged         # pliki ze stage'a
+vendor/bin/pc run --format=json    # jeden dokument JSON (schemat: docs/schema/pc-run-1.json)
 ```
+
+Silnik odróżnia „przeszła” od „nie przeskanowano”: brak narzędzia, awaria bramki albo bramka bez kodu to kod 4, nigdy zielone
+([kontrakt wyniku](docs/bramki.md#silnik-pc-run-kontrakt-wyniku)). Do czasu przeniesienia bramek włączone bramki są jeszcze
+`gate_not_implemented`.
 
 Paczka wymaga PHP `^8.4`. Projekt z niższym `require.php` (np. wtyczka WordPress) instaluje `pc`
 w osobnym katalogu narzędzi, żeby nie podnosić wymagań własnej paczki: zob.

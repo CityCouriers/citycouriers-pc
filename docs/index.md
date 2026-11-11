@@ -5,7 +5,8 @@ powstały, trafiają tu razem z kodem (zob. [plan przeniesienia](plan-przeniesie
 
 | Dokument | Zawartość |
 | --- | --- |
-| [bramki.md](bramki.md) | Kontrakt bramek: lista, tryby, kontrola ujemna |
+| [bramki.md](bramki.md) | Kontrakt bramek: lista, tryby, silnik `pc run` (stany, kody wyjścia, schemat JSON), kontrola ujemna |
+| [schema/pc-run-1.json](schema/pc-run-1.json) | JSON Schema wyjścia `pc run --format=json` |
 | [konfiguracja.md](konfiguracja.md) | Plik `pc.json`, moduły, instalacja w projekcie z niższym PHP |
 | [proces.md](proces.md) | Zgłoszenia, etykiety P/T, audyt, PR i kontrole CI |
 | [wydania.md](wydania.md) | SemVer dla bramek, proces wydania, tag próbny |
