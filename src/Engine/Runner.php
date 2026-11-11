@@ -65,6 +65,7 @@ final readonly class Runner
                 continue;
             }
 
+            $outcome->resume();
             $outcome->result = $this->executor->finalize($gate, $context, $outcome->result, $state, $cause);
             $outcome->stop();
         }

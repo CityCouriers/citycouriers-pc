@@ -12,12 +12,16 @@ final class Outcome
 {
     private ?int $elapsedMs = null;
 
+    private ?int $mark;
+
     public function __construct(
         public readonly string $name,
         public readonly ?Gate $gate,
         public GateResult $result,
         private readonly ?int $startedAt = null,
-    ) {}
+    ) {
+        $this->mark = $startedAt;
+    }
 
     public function invoked(): bool
     {
@@ -29,10 +33,21 @@ final class Outcome
         return $this->gate?->mode() ?? GateMode::Blocking;
     }
 
+    /**
+     * Dolicza czas od ostatniego startu (fazy głównej albo `finalize`), bez czasu innych bramek między fazami.
+     */
     public function stop(): void
     {
+        if ($this->mark !== null) {
+            $this->elapsedMs = ($this->elapsedMs ?? 0) + max(0, intdiv(hrtime(true) - $this->mark, 1_000_000));
+            $this->mark = null;
+        }
+    }
+
+    public function resume(): void
+    {
         if ($this->startedAt !== null) {
-            $this->elapsedMs = max(0, intdiv(hrtime(true) - $this->startedAt, 1_000_000));
+            $this->mark = hrtime(true);
         }
     }
 

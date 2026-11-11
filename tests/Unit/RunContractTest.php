@@ -427,6 +427,30 @@ it('walidator: ujemne checked.count w not_scanned i skipped też to kod 5, a dok
     expect($skippedResult->exitCode)->toBe(5);
 });
 
+it('walidator: diagnostyka z linią lub kolumną poniżej 1 to kod 5, a dokument zgodny ze schematem', function (): void {
+    foreach ([[0, 1], [1, -1], [-3, null]] as [$line, $column]) {
+        $gate = contractGate('format')->does(fn(): GateResult => (new ResultFactory())->failed([new Diagnostic('zła pozycja', line: $line, column: $column)], new Checked(CheckedUnit::Checks, 1)));
+        [$result, $document] = Harness::runJson([$gate]);
+
+        expect($result->exitCode)->toBe(5)
+            ->and(Harness::at($document, 'error.message'))->toContain('od 1')
+            ->and(Harness::schemaErrors($document))->toBe([]);
+    }
+});
+
+it('duration_ms nie wlicza czasu innych bramek między fazą główną a finalize', function (): void {
+    $fast = contractGate('format')->withFinalize(fn(GateContext $c, GateResult $r): GateResult => $r);
+    $slow = contractGate('phpstan')->does(function (): GateResult {
+        usleep(250_000);
+
+        return (new ResultFactory())->passed(new Checked(CheckedUnit::Checks, 1));
+    });
+    [, $document] = Harness::runJson([$fast, $slow]);
+
+    expect(Harness::at($document, 'gates.0.duration_ms'))->toBeLessThan(100)
+        ->and(Harness::at($document, 'gates.1.duration_ms'))->toBeGreaterThanOrEqual(200);
+});
+
 it('finalize: bramka, której faza główna się nie rozpoczęła, go nie dostaje', function (): void {
     $log = new EventLog();
     $pre = new FakeGate('env', GateMode::Blocking, true, CheckedUnit::Checks, $log);

@@ -97,6 +97,11 @@ final class ResultValidator
         if ($result->status !== GateStatus::Failed && !$empty) {
             throw new EngineException(sprintf('Stan %s nie może mieć diagnostyk.', $result->status->value));
         }
+        foreach ($result->diagnostics as $diagnostic) {
+            if (($diagnostic->line !== null && $diagnostic->line < 1) || ($diagnostic->column !== null && $diagnostic->column < 1)) {
+                throw new EngineException('Linia i kolumna diagnostyki muszą być liczbami od 1 albo null.');
+            }
+        }
     }
 
     /**
