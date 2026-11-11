@@ -15,12 +15,14 @@ final class FakeGit implements Git
     /**
      * @param list<string>          $staged
      * @param array<string, string> $revisions
+     * @param list<string>|null     $scopePaths
      */
     public function __construct(
         private readonly bool $repository = true,
         private readonly array $staged = [],
         private readonly array $revisions = [],
         private readonly bool $stageBroken = false,
+        private readonly ?array $scopePaths = null,
     ) {}
 
     public function isRepository(): bool
@@ -35,6 +37,11 @@ final class FakeGit implements Git
         }
 
         return $this->staged;
+    }
+
+    public function scopePaths(): ?array
+    {
+        return $this->scopePaths;
     }
 
     public function resolveCommit(string $revision): ?string

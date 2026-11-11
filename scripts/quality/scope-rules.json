@@ -1,0 +1,110 @@
+{
+    "version": 1,
+    "gates": ["privacy", "shellcheck", "yamllint", "actionlint", "schema", "pinact", "zizmor", "lint", "stan", "smells", "test", "negative", "process"],
+    "triggers": {
+        "privacy": "każda zmiana (tania, czyta listę plików repo)",
+        "shellcheck": ".sh, .githooks/*",
+        "yamllint": ".yml i .yaml w .github/, .yamllint.yaml",
+        "actionlint": ".github/workflows/*.y(a)ml, .yamllint.yaml, .github/zizmor.yml",
+        "schema": ".github/workflows/*.y(a)ml, .github/dependabot.yml, .github/ISSUE_TEMPLATE/config.yml",
+        "pinact": ".github/workflows/*.y(a)ml",
+        "zizmor": ".github/workflows/*.y(a)ml, .github/dependabot.yml, .github/zizmor.yml, requirements-lint",
+        "lint": ".php, pint.json, composer.json",
+        "stan": ".php, phpstan.neon, composer.json",
+        "smells": "src/, bin/pc, rulesets/, composer.json",
+        "test": ".php, tests/Fixtures/, docs/schema/*.json, scripts/ci/*.sh, phpunit.xml.dist, composer.json",
+        "negative": "src/, bin/pc, rulesets/, tests/Fixtures/, scripts/ci/*.sh, pint.json, phpstan.neon, composer.json",
+        "process": "scripts/quality/, test/, .github/, package.json"
+    },
+    "rules": [
+        {
+            "name": "fuse",
+            "fuse": true,
+            "gates": ["privacy"],
+            "match": {
+                "prefix": [".githooks/", "src/Scope/", "tests/Unit/Scope/"],
+                "exact": ["scripts/quality/scope-rules.json", "scripts/ci/github-gate.sh"]
+            }
+        },
+        {
+            "name": "php-config",
+            "gates": ["privacy", "lint", "stan", "smells", "test", "negative"],
+            "match": { "exact": ["composer.json", "pint.json", "phpstan.neon", "phpunit.xml.dist", "scripts/ci/phpstan-negative.neon"] }
+        },
+        {
+            "name": "src-bin",
+            "gates": ["privacy", "lint", "stan", "smells", "test", "negative"],
+            "match": { "prefix": ["src/"], "exact": ["bin/pc"] }
+        },
+        {
+            "name": "rulesets",
+            "gates": ["privacy", "smells", "negative"],
+            "match": { "prefix": ["rulesets/"] }
+        },
+        {
+            "name": "github-fixtures",
+            "gates": ["privacy", "shellcheck", "yamllint", "actionlint", "schema", "pinact", "zizmor"],
+            "match": { "prefix": ["tests/Fixtures/negative-github/"] }
+        },
+        {
+            "name": "schema-docs",
+            "gates": ["privacy", "test"],
+            "match": { "regex": ["^docs/schema/[^/]+\\.json$"] }
+        },
+        {
+            "name": "fixtures",
+            "gates": ["privacy", "test", "negative"],
+            "match": { "prefix": ["tests/Fixtures/"] }
+        },
+        {
+            "name": "tests-php",
+            "gates": ["privacy", "lint", "stan", "test"],
+            "match": { "regex": ["^tests/.*\\.php$"] }
+        },
+        {
+            "name": "ci-shell",
+            "gates": ["privacy", "shellcheck", "test", "negative"],
+            "match": { "regex": ["^scripts/ci/[^/]+\\.sh$"] }
+        },
+        {
+            "name": "lint-requirements",
+            "gates": ["privacy", "yamllint", "schema", "zizmor"],
+            "match": { "regex": ["^scripts/ci/requirements-lint\\.(in|txt)$"] }
+        },
+        {
+            "name": "tool-configs",
+            "gates": ["privacy", "yamllint", "actionlint", "schema", "pinact", "zizmor"],
+            "match": { "exact": [".yamllint.yaml", ".github/zizmor.yml", ".github/actionlint.yaml"] }
+        },
+        {
+            "name": "workflows",
+            "gates": ["privacy", "yamllint", "actionlint", "schema", "pinact", "zizmor", "process"],
+            "match": { "regex": ["^\\.github/workflows/[^/]+\\.ya?ml$"] }
+        },
+        {
+            "name": "dependabot",
+            "gates": ["privacy", "yamllint", "schema", "zizmor", "process"],
+            "match": { "exact": [".github/dependabot.yml"] }
+        },
+        {
+            "name": "issue-config",
+            "gates": ["privacy", "yamllint", "schema", "process"],
+            "match": { "exact": [".github/ISSUE_TEMPLATE/config.yml"] }
+        },
+        {
+            "name": "process",
+            "gates": ["privacy", "process"],
+            "match": { "prefix": ["scripts/quality/", "test/", ".github/"], "exact": ["package.json", "package-lock.json"] }
+        },
+        {
+            "name": "docs",
+            "gates": ["privacy"],
+            "match": { "exact": ["LICENSE"], "suffix": [".md"], "regex": ["^docs/.*\\.(md|txt|png|jpg|jpeg|gif|svg)$"] }
+        },
+        {
+            "name": "git-meta",
+            "gates": ["privacy"],
+            "match": { "exact": [".gitignore", ".gitattributes"] }
+        }
+    ]
+}

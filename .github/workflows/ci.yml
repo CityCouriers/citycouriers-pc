@@ -129,10 +129,37 @@ jobs:
           persist-credentials: false
       - run: bash scripts/ci/privacy-scan.sh
 
+  # Klasyfikator zakresu (#40) w profilu enforce-all: CI nie zawęża niczego, tylko drukuje, co hook pominąłby lokalnie
+  # (informacyjnie), i dowodzi, że klasyfikator działa na pełnej historii. Job biegnie zawsze, także dla samych *.md.
+  scope:
+    name: Zakres bramek (enforce-all)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+          tools: composer:v2
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - name: Klasyfikator zakresu (enforce-all)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            php bin/pc scope --profile=enforce-all --base="$BASE_SHA"
+          else
+            php bin/pc scope --profile=enforce-all
+          fi
+
   # Bramki plików GitHub (zgłoszenia #5, #43, #44, #45, #46, #6). Komendy i kontrole ujemne są w jednym skrypcie,
   # scripts/ci/github-gate.sh, który woła też hook pre-commit (ten sam zestaw lokalnie i w CI). Narzędzia w przypiętych
   # wersjach: binarki z sumą SHA-256, paczki Pythona z hashami wszystkich zależności (scripts/ci/requirements-lint.txt).
-  # W CI biegną zawsze (przebiegi trwają kilkanaście sekund); zakres plików skraca tylko lokalny hook (hook-scope.js).
+  # W CI biegną zawsze (przebiegi trwają kilkanaście sekund); zakres plików skraca tylko lokalny hook (klasyfikator, profil local-narrow).
   actionlint:
     name: actionlint (workflow GitHub Actions)
     runs-on: ubuntu-latest
@@ -323,7 +350,7 @@ jobs:
     name: quality-gate
     if: always()
     needs: [composer, pint, phpstan, phpmd, tests, negative-controls, privacy, secret-scan, process-tests,
-            actionlint, zizmor, yamllint, schema, pinact, shellcheck]
+            actionlint, zizmor, yamllint, schema, pinact, shellcheck, scope]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:

@@ -2,24 +2,36 @@
 # Hook pre-commit repo pc: te same kontrole co w CI (poza skanerem sekretów, który wymaga binarki gitleaks).
 # Włączenie: composer hooks (git config core.hooksPath .githooks). Bez --no-verify.
 #
-# Zakres: bramki uruchamiane są dla typów zmienionych plików (scripts/quality/hook-scope.js, docs/bramki.md,
-# sekcja „Zakres plików bramki”). Commit z samym .md nie uruchamia PHPStan ani testów, bo nic w nich nie sprawdzą.
-# Każda niepewność (pusty stage, nieznany plik, błąd klasyfikatora, brak node) daje pełny zestaw.
-# PC_HOOK_SCOPE=all wymusza pełny zestaw. Lista bramek musi zgadzać się ze skryptem (pilnuje tego test/hook-scope.test.js).
+# Zakres: bramki uruchamiane są dla typów zmienionych plików. Decyzję podejmuje wspólny klasyfikator silnika
+# (`php bin/pc scope`, reguły w scripts/quality/scope-rules.json, profil local-narrow; docs/bramki.md, „Zakres plików bramki”),
+# ten sam, którego CI używa w profilu enforce-all (pełny zestaw). Commit z samym .md nie uruchamia PHPStan ani testów.
+# Każda niepewność (pusty stage, nieznany plik, nieustalony tryb commita, błąd klasyfikatora, brak php) daje pełny zestaw.
+# PC_HOOK_SCOPE=all wymusza pełny zestaw. Lista bramek musi zgadzać się z regułami (pilnuje tego tests/Unit/Scope).
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
 all_gates="privacy shellcheck yamllint actionlint schema pinact zizmor lint stan smells test negative process"
 
-if command -v node >/dev/null 2>&1; then
-    if ! scope="$(node scripts/quality/hook-scope.js)"; then
-        echo "pre-commit: klasyfikator zakresu zawiódł, uruchamiam pełny zestaw bramek." >&2
-        scope="$all_gates"
-    fi
+# Odpowiedź klasyfikatora jest walidowana: pusta albo z nieznaną bramką to awaria, nie decyzja.
+valid_scope() {
+    local gate known
+    [ -n "$1" ] || return 1
+    for gate in $1; do
+        known=0
+        for candidate in $all_gates; do
+            if [ "$gate" = "$candidate" ]; then known=1; fi
+        done
+        [ "$known" -eq 1 ] || return 1
+    done
+}
+
+scope=""
+if command -v php >/dev/null 2>&1 && scope="$(php bin/pc scope --profile=local-narrow --parent-pid="$PPID")" && valid_scope "$scope"; then
+    :
 else
-    echo "pre-commit: brak node, uruchamiam pełny zestaw bramek bez testów skryptów procesu (w CI biegną zawsze)." >&2
-    scope="privacy shellcheck yamllint actionlint schema pinact zizmor lint stan smells test negative"
+    echo "pre-commit: klasyfikator zakresu zawiódł (albo brak php), uruchamiam pełny zestaw bramek." >&2
+    scope="$all_gates"
 fi
 
 # Testy skryptów procesu: npm test, a gdy jest sam Node bez npm, bezpośrednio node --test (ten sam zestaw plików).
@@ -29,10 +41,12 @@ run_process_tests() {
         npm test --silent
     else
         echo "pre-commit: brak npm, uruchamiam node --test bezpośrednio." >&2
-        node --test test/*.test.js
+        node --test "test/**/*.test.js"
     fi
 }
 
+passed=""
+unscanned=""
 for gate in $scope; do
     echo "[pre-commit] $gate" >&2
     case "$gate" in
@@ -48,10 +62,37 @@ for gate in $scope; do
         smells) composer smells ;;
         test) composer test ;;
         negative) composer negative ;;
-        process) run_process_tests ;;
+        process)
+            if ! command -v node >/dev/null 2>&1; then
+                # Decyzja z #39, jawna: brak Node nie blokuje commita, bo CI uruchamia `process` zawsze (enforce-all).
+                echo "[pre-commit] process: nie przeskanowano (brak node); CI uruchamia tę bramkę zawsze." >&2
+                unscanned="$unscanned process"
+                continue
+            fi
+            run_process_tests
+            ;;
         *)
             echo "pre-commit: nieznana bramka '$gate'" >&2
             exit 1
             ;;
     esac
+    passed="$passed $gate"
 done
+
+skipped=""
+for gate in $all_gates; do
+    case " $scope " in
+        *" $gate "*) ;;
+        *) skipped="$skipped $gate" ;;
+    esac
+done
+
+echo "[pre-commit] przeszły:${passed:- brak}" >&2
+if [ -n "$skipped" ]; then
+    echo "[pre-commit] pominięte (zakres, nic tu nie sprawdzą):$skipped" >&2
+fi
+if [ -n "$unscanned" ]; then
+    echo "[pre-commit] NIEPEŁNY, nie przeskanowano:$unscanned (commit nie jest blokowany, CI biegnie w pełnym zestawie)." >&2
+else
+    echo "[pre-commit] OK" >&2
+fi

@@ -55,6 +55,7 @@ bramki, gdy jest w zakresie i zostało zmienione po starcie, albo gdy recenzent 
 | `schema` | check-jsonschema: workflow, `dependabot.yml`, konfiguracja zgłoszeń |
 | `pinact` | Akcje przypięte do pełnego SHA z komentarzem wersji |
 | `shellcheck` | Skrypty `.sh` i hooki |
+| `scope` | Klasyfikator zakresu w profilu `enforce-all` na pełnej historii (CI niczego nie zawęża) |
 | `process-tests` | Testy skryptów procesu: bramka audytu, etykiety, `quality-gate` |
 | `quality-gate` | Zbiorczo: każdy powyższy job musi mieć wynik `success` |
 

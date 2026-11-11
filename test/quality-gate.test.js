@@ -40,6 +40,18 @@ describe('#242: ocena jobów (evaluate)', () => {
     assert.equal(gate.evaluate({ phpstan: null, 'secret-scan': { result: 'success' } }).ok, false);
   });
 
+  test('skipped nie jest sukcesem dla żadnego wymaganego jobu (#40)', () => {
+    for (const job of gate.REQUIRED_JOBS) {
+      const needs = allOk();
+      needs[job] = { result: 'skipped' };
+      for (const draft of [false, true]) {
+        const r = gate.evaluate(needs, { draft });
+        assert.equal(r.ok, false, `${job} pominięty (draft=${draft}) nie może zaliczać`);
+        assert.deepEqual(r.failures, [`${job}: skipped`]);
+      }
+    }
+  });
+
   test('pominięcie dozwolone tylko dla jobu z listy ciężkich i tylko w PR w Draft', () => {
     const original = gate.HEAVY_JOBS.slice();
     gate.HEAVY_JOBS.push('mutation');

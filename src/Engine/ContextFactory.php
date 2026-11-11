@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace CityCouriers\Pc\Engine;
 
+use CityCouriers\Pc\Scope\Profile;
+
 /**
  * Buduje kontekst biegu: zakres, pliki ze stage'a i baza diffu (`--base`) rozwiązana raz do pełnego OID.
  */
@@ -31,7 +33,9 @@ final readonly class ContextFactory
         $files = $staged ? $this->git->stagedFiles() : null;
 
         // Pusty stage nie oznacza „brak bramek”: bramki biegną w pełnym zakresie (zasada 4, docs/bramki.md).
-        return new GateContext($options->scope, $files === [] ? null : $files, $diffBase, $this->root, $config);
+        $scopePaths = $staged && $options->profile === Profile::LocalNarrow ? $this->git->scopePaths() : null;
+
+        return new GateContext($options->scope, $files === [] ? null : $files, $diffBase, $this->root, $config, $options->profile, $scopePaths);
     }
 
     /**

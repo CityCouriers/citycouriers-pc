@@ -15,7 +15,7 @@
  */
 
 /** Joby kontrolne z `ci.yml`, od których zależy agregat (wszystkie poza samym `quality-gate`). */
-const REQUIRED_JOBS = ['composer', 'pint', 'phpstan', 'phpmd', 'tests', 'negative-controls', 'privacy', 'secret-scan', 'process-tests', 'actionlint', 'zizmor', 'yamllint', 'schema', 'pinact', 'shellcheck'];
+const REQUIRED_JOBS = ['composer', 'pint', 'phpstan', 'phpmd', 'tests', 'negative-controls', 'privacy', 'secret-scan', 'process-tests', 'actionlint', 'zizmor', 'yamllint', 'schema', 'pinact', 'shellcheck', 'scope'];
 
 /** Ciężkie kontrole, które w PR w Draft wolno pominąć (dziś brak; dodaje je #254). */
 const HEAVY_JOBS = [];

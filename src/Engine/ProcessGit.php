@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace CityCouriers\Pc\Engine;
 
+use CityCouriers\Pc\Scope\CommitMode;
+use CityCouriers\Pc\Scope\ProcessGitRunner;
+use CityCouriers\Pc\Scope\ScopeResolver;
+
 /**
  * Git przez proces potomny (`git -C <katalog>`), bez powłoki.
  */
@@ -26,6 +30,16 @@ final readonly class ProcessGit implements Git
         }
 
         return array_values(array_filter(explode("\0", $output), static fn(string $path): bool => $path !== ''));
+    }
+
+    public function scopePaths(): ?array
+    {
+        $input = (new ScopeResolver(new ProcessGitRunner($this->directory)))->staged(CommitMode::Unknown);
+        if ($input->unresolvedReason !== null || $input->specialModes || $input->paths === []) {
+            return null;
+        }
+
+        return $input->paths;
     }
 
     public function resolveCommit(string $revision): ?string
