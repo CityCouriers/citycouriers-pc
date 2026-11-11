@@ -16,6 +16,7 @@ final readonly class GateExecutor
         private InterruptSignal $interrupt,
         private ResultValidator $validator = new ResultValidator(),
         private ResultFactory $results = new ResultFactory(),
+        private FinalizeCrash $crash = new FinalizeCrash(),
     ) {}
 
     public function signal(): ?int
@@ -67,9 +68,10 @@ final readonly class GateExecutor
         try {
             $after = $this->normalize($gate, $gate->finalize($context, $before, $cause), $state);
         } catch (Throwable $exception) {
-            $state->gateException = true;
+            $text = sprintf('Wyjątek w fazie finalize bramki „%s”: %s. Przywrócenie stanu po bramce mogło się nie dokonać.', $gate->name(), $exception->getMessage());
+            $state->engineError ??= $text;
 
-            return $this->worsenAfterCrash($before, $gate->name(), $exception->getMessage());
+            return $this->crash->worsen($gate, $before, $text);
         }
 
         if ($after->status->severityRank() < $before->status->severityRank()) {
@@ -105,15 +107,10 @@ final readonly class GateExecutor
         }
     }
 
-    private function worsenAfterCrash(GateResult $before, string $name, string $message): GateResult
-    {
-        if ($before->status === GateStatus::Failed || $before->status === GateStatus::NotScanned) {
-            return $before;
-        }
-
-        return $this->results->crashed(sprintf('Wyjątek w fazie finalize bramki „%s”: %s', $name, $message));
-    }
-
+    /**
+     * Awaria `finalize` jest osobnym, widocznym faktem: `failed` zostaje `failed` (dochodzi diagnostyka),
+     * `not_scanned` dostaje powód `gate_crashed`, a pozostałe stany stają się `not_scanned` / `gate_crashed`.
+     */
     /**
      * Przyczyna końca fazy głównej, ustalana raz przed wszystkimi `finalize` (zdarzenia w trakcie `finalize` jej nie zmieniają).
      */

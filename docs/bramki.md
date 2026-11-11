@@ -75,7 +75,7 @@ Każdy kod ma jedną wartość `status` najwyższego poziomu w JSON, a `exit_cod
 | 2 | `usage_error` | Nieznana opcja lub argument, nieznana wartość `--format`, `--staged` poza repozytorium git, `--base` razem z `--staged`, nierozwiązywalna rewizja `--base` (`error.code: "invalid_base"`) |
 | 3 | `config_error` | Brak `pc.json`, nieczytelny albo niepoprawny plik, niezgodność ze schematem, nieznana nazwa bramki, brak włączonej bramki. Żadna bramka nie biegnie |
 | 4 | `incomplete` | Brak `failed` w bramkach blokujących, ale co najmniej jedna blokująca ma `not_scanned` |
-| 5 | `error` | Błąd silnika (nie bramki): nie da się odczytać stage'a, niespójny wynik bramki odrzucony przez walidację, poprawa wyniku w `finalize`. Bieg przerwany, nieuruchomione bramki są `not_scanned` / `interrupted` |
+| 5 | `error` | Błąd silnika (nie bramki): nie da się odczytać stage'a, niespójny wynik bramki odrzucony przez walidację (w tym ujemne `checked.count`), poprawa wyniku w `finalize`, wyjątek w `finalize`. Bieg przerwany, nieuruchomione bramki są `not_scanned` / `interrupted` |
 | 130, 143 | `interrupted` | SIGINT (130) albo SIGTERM (143). Nieuruchomione bramki: `not_scanned` / `interrupted` |
 
 Reguła pierwszeństwa przy wynikach mieszanych, od najwyższego: przerwanie (130/143) > błąd silnika (5) > `failed` w bramce
@@ -103,7 +103,10 @@ Egzekwuje je runner, nie pojedyncza bramka:
    `precondition_failed`, `interrupted` przed startem, `gate_not_implemented`) i bramka z wynikiem `skipped` jej nie dostają. Wejście: wynik fazy
    głównej i przyczyna końca biegu (`completed`, `gate_exception`, `interrupted`, `engine_error`), ustalona raz przed pierwszym
    `finalize`. Wynik wolno tylko **pogorszyć** (`passed` < `not_scanned` < `failed`); poprawa to błąd silnika (kod 5). Wyjątek w
-   `finalize` daje co najmniej `not_scanned` / `gate_crashed` (`failed` zostaje `failed`), a pozostałe `finalize` się wykonują. Sygnał w
+   `finalize` to osobny, widoczny fakt: bieg kończy się kodem 5 (`error.code` `engine_error`, komunikat nazywa bramkę i wyjątek, bo
+   przywrócenie stanu mogło się nie dokonać). `failed` zostaje `failed` (dochodzi diagnostyka z regułą `finalize_crashed`), `not_scanned`
+   dostaje powód `gate_crashed` z wcześniejszym powodem w komunikacie, pozostałe stany stają się `not_scanned` / `gate_crashed`.
+   Pozostałe `finalize` się wykonują. Sygnał w
    trakcie `finalize` jest odroczony do jego końca (silnik tylko go zapamiętuje). SIGKILL i utrata zasilania są poza zasięgiem silnika:
    bramka odpowiada za trwały zapis i odzyskiwanie. Kod wyjścia liczy się po `finalize`, a po przerwaniu pozostaje 130 / 143.
 

@@ -291,21 +291,80 @@ it('finalize: poprawa failed → passed jest odrzucona (kod 5)', function (): vo
         ->and(Harness::at($document, 'gates.0.status'))->toBe('failed');
 });
 
-it('finalize: wyjątek daje gate_crashed (failed pozostaje failed), a pozostałe finalize się wykonują', function (): void {
+it('finalize: wyjątek jest osobnym faktem (kod 5), pozostałe finalize się wykonują', function (): void {
     $log = new EventLog();
     $boom = static function (): GateResult {
         throw new RuntimeException('finalize padło');
     };
     $passing = contractGate('format', log: $log)->withFinalize($boom);
-    $failing = contractGate('phpstan', log: $log)->fails()->withFinalize($boom);
     $last = contractGate('phpmd', log: $log);
-    [$result, $document] = Harness::runJson([$passing, $failing, $last]);
+    [$result, $document] = Harness::runJson([$passing, $last]);
 
-    expect($log->lines)->toBe(['run:format', 'run:phpstan', 'run:phpmd', 'finalize:phpmd:completed', 'finalize:phpstan:completed', 'finalize:format:completed'])
+    expect($log->lines)->toBe(['run:format', 'run:phpmd', 'finalize:phpmd:completed', 'finalize:format:completed'])
+        ->and($result->exitCode)->toBe(5)
+        ->and(Harness::at($document, 'status'))->toBe('error')
+        ->and(Harness::at($document, 'error.code'))->toBe('engine_error')
+        ->and(Harness::at($document, 'error.message'))->toContain('finalize bramki „format”')->toContain('finalize padło')
         ->and(Harness::at($document, 'gates.0.status'))->toBe('not_scanned')
         ->and(Harness::at($document, 'gates.0.reason.code'))->toBe('gate_crashed')
-        ->and(Harness::at($document, 'gates.1.status'))->toBe('failed')
-        ->and($result->exitCode)->toBe(1);
+        ->and(Harness::at($document, 'gates.1.status'))->toBe('passed')
+        ->and(Harness::schemaErrors($document))->toBe([]);
+});
+
+it('finalize: Failed → wyjątek w finalize zostaje failed, ale awaria jest w diagnostykach i w błędzie (kod 5)', function (): void {
+    $log = new EventLog();
+    $boom = static function (): GateResult {
+        throw new RuntimeException('przywrócenie padło');
+    };
+    $failing = contractGate('phpstan', log: $log)->fails('błąd typów')->withFinalize($boom);
+    $last = contractGate('phpmd', log: $log);
+    [$result, $document] = Harness::runJson([$failing, $last]);
+
+    $messages = array_map(static fn(mixed $d): string => Harness::text(Harness::at((array) $d, 'message')), (array) Harness::at($document, 'gates.0.diagnostics'));
+    $rules = array_map(static fn(mixed $d): mixed => Harness::at((array) $d, 'rule'), (array) Harness::at($document, 'gates.0.diagnostics'));
+
+    expect($log->lines)->toBe(['run:phpstan', 'run:phpmd', 'finalize:phpmd:completed', 'finalize:phpstan:completed'])
+        ->and(Harness::at($document, 'gates.0.status'))->toBe('failed')
+        ->and($messages)->toContain('błąd typów')
+        ->and(implode("\n", $messages))->toContain('przywrócenie padło')
+        ->and($rules)->toContain('finalize_crashed')
+        ->and($result->exitCode)->toBe(5)
+        ->and(Harness::at($document, 'error.message'))->toContain('przywrócenie padło')
+        ->and(Harness::at($document, 'gates.1.status'))->toBe('passed')
+        ->and(Harness::schemaErrors($document))->toBe([]);
+});
+
+it('finalize: NotScanned → wyjątek w finalize daje jawne gate_crashed z wcześniejszym powodem (kod 5)', function (): void {
+    $boom = static function (): GateResult {
+        throw new RuntimeException('stash nie wrócił');
+    };
+    $missing = contractGate('phpstan')->missingTool()->withFinalize($boom);
+    [$result, $document] = Harness::runJson([$missing]);
+
+    expect(Harness::at($document, 'gates.0.status'))->toBe('not_scanned')
+        ->and(Harness::at($document, 'gates.0.reason.code'))->toBe('gate_crashed')
+        ->and(Harness::at($document, 'gates.0.reason.message'))->toContain('stash nie wrócił')->toContain('Brak narzędzia')
+        ->and($result->exitCode)->toBe(5)
+        ->and(Harness::at($document, 'error.message'))->toContain('stash nie wrócił')
+        ->and(Harness::at($document, 'complete'))->toBeFalse()
+        ->and($result->stderr)->toContain('stash nie wrócił')
+        ->and(Harness::schemaErrors($document))->toBe([]);
+});
+
+it('walidator: ujemne checked.count to błąd silnika (kod 5), 0 i dodatnie zachowują dotychczasowe wyniki', function (): void {
+    $negative = contractGate('format')->does(fn(): GateResult => (new ResultFactory())->passed(new Checked(CheckedUnit::Checks, -1)));
+    [$result, $document] = Harness::runJson([$negative]);
+
+    expect($result->exitCode)->toBe(5)
+        ->and(Harness::at($document, 'error.message'))->toContain('ujemną liczbę');
+
+    $zero = contractGate('format')->does(fn(): GateResult => (new ResultFactory())->passed(new Checked(CheckedUnit::Checks, 0)));
+    [$zeroResult, $zeroDocument] = Harness::runJson([$zero]);
+    expect($zeroResult->exitCode)->toBe(4)
+        ->and(Harness::at($zeroDocument, 'gates.0.reason.code'))->toBe('nothing_checked');
+
+    [$positiveResult] = Harness::runJson([contractGate('format')]);
+    expect($positiveResult->exitCode)->toBe(0);
 });
 
 it('finalize: bramka, której faza główna się nie rozpoczęła, go nie dostaje', function (): void {

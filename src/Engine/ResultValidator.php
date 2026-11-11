@@ -108,6 +108,10 @@ final class ResultValidator
             return;
         }
 
+        if ($result->checked !== null && $result->checked->count < 0) {
+            throw new EngineException(sprintf('Bramka „%s” zwróciła ujemną liczbę sprawdzonych jednostek (%d).', $gate->name(), $result->checked->count));
+        }
+
         $declared = $gate->checkedUnit();
         if ($declared !== $result->checked?->unit) {
             throw new EngineException(sprintf('Bramka „%s” deklaruje jednostkę „%s”, a wynik niesie inną.', $gate->name(), $declared === null ? 'brak' : $declared->value));
