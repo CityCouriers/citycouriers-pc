@@ -11,29 +11,33 @@ use CityCouriers\Pc\Tests\Support\Harness;
 it('SIGINT w podprocesie: kod 130, finalize wykonane, ostateczny wynik w raporcie', function (): void {
     $marker = (string) tempnam(sys_get_temp_dir(), 'pcsig');
     $windows = PHP_OS_FAMILY === 'Windows';
-    // POSIX: SIGINT z procesu testowego (pcntl). Windows: zdarzenie CTRL_BREAK nie ma adresata po PID, trafia do
-    // wszystkich procesów konsoli, więc podproces dostaje WŁASNĄ konsolę i sam wysyła je sobie ("self-break").
-    // Test nigdy nie wysyła zdarzenia do konsoli, w której biegnie Pest (zepsułoby tryb konsoli i urwało bieg).
-    $arguments = [PHP_BINARY, __DIR__ . '/../Support/interrupt-run.php', $marker, ...($windows ? ['self-break'] : [])];
+    // POSIX: SIGINT z procesu testowego (proc_terminate). Windows: zdarzenie CTRL_BREAK z numerem grupy procesów
+    // trafia tylko do tej grupy, a nie do całej konsoli, jeśli podproces jest liderem własnej grupy (create_process_group,
+    // numer grupy to jego PID). Nie potrzeba własnej konsoli (create_new_console otwierał migające okno), a zdarzenie
+    // nie dociera do konsoli Pesta (bez numeru grupy, czyli 0, zepsułoby tryb konsoli i urwało bieg).
+    $arguments = [PHP_BINARY, __DIR__ . '/../Support/interrupt-run.php', $marker];
     $pipes = [];
-    $process = Child::open($arguments, $pipes, null, null, $windows ? ['create_new_console' => true] : null);
+    $process = Child::open($arguments, $pipes, null, null, $windows ? ['create_process_group' => true] : null);
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić podprocesu.');
     }
 
-    // Czekamy, aż bramka w podprocesie zacznie pracę. Na Windows podproces sygnalizuje się sam zaraz po markerze, więc
-    // marker może od razu przejść z "ready" do "finalized". Podproces zapisuje marker atomowo (zob. interrupt-run.php),
-    // więc każdy odczyt to cała wartość: pusta (przed pierwszym zapisem), "ready" albo "finalized".
+    // Czekamy, aż bramka w podprocesie zacznie pracę, i dopiero wtedy wysyłamy sygnał, więc do tej chwili marker to
+    // najwyżej "ready". Podproces zapisuje marker atomowo (zob. interrupt-run.php), więc każdy odczyt to cała wartość:
+    // pusta (przed pierwszym zapisem) albo "ready".
     $deadline = microtime(true) + 10;
     do {
         $seen = file_get_contents($marker);
-        if (in_array($seen, ['ready', 'finalized'], true)) {
+        if ($seen === 'ready') {
             break;
         }
         usleep(20_000);
     } while (microtime(true) < $deadline);
-    expect($seen)->toBeIn(['ready', 'finalized']);
-    if (!$windows) {
+    expect($seen)->toBe('ready');
+    if ($windows) {
+        $pid = proc_get_status($process)['pid'];
+        expect(sapi_windows_generate_ctrl_event(PHP_WINDOWS_EVENT_CTRL_BREAK, $pid))->toBeTrue();
+    } else {
         proc_terminate($process, 2);
     }
 

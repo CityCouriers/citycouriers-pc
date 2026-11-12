@@ -80,8 +80,8 @@ w interaktywnej konsoli. Przed oddaniem zmiany w testach procesów, powłoki alb
 w zwykłej konsoli (Windows Terminal z PowerShell, cmd, Git Bash/mintty) i sprawdź, że bieg kończy się linią `Tests: … passed`
 bez `failed` i `skipped`:
 
-- **Zdarzenia konsoli.** `CTRL_C`/`CTRL_BREAK` trafia do wszystkich procesów konsoli, nie do jednego PID. Test sygnału
-  uruchamia podproces we własnej konsoli (`create_new_console`) i nie wysyła zdarzenia do konsoli Pesta, inaczej bieg się urywa.
+- **Zdarzenia konsoli.** `CTRL_C`/`CTRL_BREAK` bez numeru grupy trafia do wszystkich procesów konsoli, a nie do jednego PID. Test sygnału
+  uruchamia podproces jako lidera własnej grupy (`create_process_group`) i wysyła `CTRL_BREAK` z numerem tej grupy (PID podprocesu), nigdy z 0, inaczej bieg się urywa. Własna konsola (`create_new_console`) otwierała migające okno.
 - **`bash` z PATH.** W PowerShell i cmd pierwszy `bash` bywa wrapperem WSL (WindowsApps). Testy skryptów używają
   `Tests\Support\PosixShell` (bash z Gita) zamiast gołego `bash`.
 - **`Path` i `PATH`.** PowerShell podaje `Path`; `GitRepo::environment()` nie dopuszcza dwóch kluczy różniących się wielkością liter.

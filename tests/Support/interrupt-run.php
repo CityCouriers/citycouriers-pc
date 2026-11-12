@@ -34,17 +34,12 @@ function mark(string $marker, string $value): void
 }
 
 $marker = $argv[1];
-$selfBreak = ($argv[2] ?? '') === 'self-break';
 $interrupt = new ProcessInterrupt();
 $log = new EventLog();
 
 $gate = (new FakeGate('format', log: $log))
-    ->does(static function () use ($marker, $interrupt, $selfBreak): \CityCouriers\Pc\Engine\GateResult {
+    ->does(static function () use ($marker, $interrupt): \CityCouriers\Pc\Engine\GateResult {
         mark($marker, 'ready');
-        // Tryb Windows (własna konsola podprocesu, zob. RunContractTest): zdarzenie CTRL_BREAK do konsoli tego procesu.
-        if ($selfBreak && function_exists('sapi_windows_generate_ctrl_event')) {
-            sapi_windows_generate_ctrl_event(PHP_WINDOWS_EVENT_CTRL_BREAK, 0);
-        }
         $deadline = microtime(true) + 10;
         while ($interrupt->signal() === null && microtime(true) < $deadline) {
             usleep(10_000);
