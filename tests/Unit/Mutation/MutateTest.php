@@ -70,6 +70,20 @@ it('redakcja usuwa ścieżki z maszyny w każdym zapisie (ukośniki, odwrócone,
     expect($redactor->redact($text))->toBe('.\\src\\A.php ./src/B.php ".\\\\src" <php>\\php.exe ~\\AppData');
 });
 
+it('redakcja ścieżek z Linuksa: katalog domowy, interpreter i repo w nim, kropki w tekście zostają', function (): void {
+    $redactor = new Redactor('/srv/praca/repo', '/usr/bin/php8.4', '/srv/praca');
+    $text = '/srv/praca/repo/src/A.php /usr/bin/php8.4 /srv/praca/.config wersja 1.2.3';
+
+    expect($redactor->redact($text))->toBe('./src/A.php <php>/php8.4 ~/.config wersja 1.2.3');
+});
+
+// Kontrola ujemna: ścieżka bez separatora (interpreter z PATH, katalog „.”) nie może zamieniać zwykłego tekstu.
+it('redakcja pomija ścieżki bez separatora', function (string $phpBinary): void {
+    $redactor = new Redactor('/praca/repo', $phpBinary, '');
+
+    expect($redactor->redact('src/A.php wersja 1.2.3 php.exe'))->toBe('src/A.php wersja 1.2.3 php.exe');
+})->with(['nazwa z PATH' => 'php', 'katalog bieżący' => './php', 'katalog główny' => '/php']);
+
 it('manifest: werdykt, polecenie, cele z licznikami i każdy mutant posortowany po pliku i linii', function (): void {
     $journal = new Journal(
         [

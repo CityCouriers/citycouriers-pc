@@ -17,14 +17,15 @@ final readonly class Redactor
 
     public function __construct(string $root, string $phpBinary, ?string $home)
     {
-        $replacements = [$root => '.', dirname($phpBinary) => '<php>'];
+        $replacements = [$root => '.', self::directory($phpBinary) => '<php>'];
         if ($home !== null && $home !== '') {
             $replacements[$home] = '~';
         }
         $variants = [];
         foreach ($replacements as $path => $replacement) {
             $trimmed = rtrim($path, '/\\');
-            if ($trimmed === '') {
+            // Bez separatora to nie jest ścieżka z maszyny (np. „.” albo „php”): zamiana psułaby zwykły tekst.
+            if (strpbrk($trimmed, '/\\') === false) {
                 continue;
             }
             foreach ([$trimmed, str_replace('\\', '/', $trimmed), str_replace('/', '\\', $trimmed), str_replace(['\\', '/'], '\\\\', $trimmed)] as $variant) {
@@ -33,6 +34,16 @@ final readonly class Redactor
         }
         uksort($variants, static fn(string $left, string $right): int => strlen($right) <=> strlen($left));
         $this->replacements = $variants;
+    }
+
+    /**
+     * Katalog pliku niezależnie od systemu: `dirname()` na Linuksie nie rozpoznaje `\` i dla `C:\php\php.exe` zwraca „.”.
+     */
+    private static function directory(string $path): string
+    {
+        $separator = max((int) strrpos($path, '/'), (int) strrpos($path, '\\'));
+
+        return substr($path, 0, $separator);
     }
 
     public function redact(string $text): string
