@@ -19,7 +19,7 @@ final class PosixShell
         if (PHP_OS_FAMILY !== 'Windows') {
             return null;
         }
-        $execPath = trim((string) shell_exec('git --exec-path 2>NUL'));
+        $execPath = trim(Child::capture(['git', '--exec-path'])[1]);
         $root = $execPath === '' ? '' : dirname($execPath, 3);
         $directory = str_replace('/', DIRECTORY_SEPARATOR, $root . '/usr/bin');
 

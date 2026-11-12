@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use CityCouriers\Pc\Tests\Support\Child;
 use CityCouriers\Pc\Engine\Checked;
 use CityCouriers\Pc\Engine\CheckedUnit;
 use CityCouriers\Pc\Engine\Diagnostic;
@@ -513,7 +514,8 @@ it('SIGINT w podprocesie: kod 130, finalize wykonane, ostateczny wynik w raporci
     // wszystkich procesów konsoli, więc podproces dostaje WŁASNĄ konsolę i sam wysyła je sobie ("self-break").
     // Test nigdy nie wysyła zdarzenia do konsoli, w której biegnie Pest (zepsułoby tryb konsoli i urwało bieg).
     $arguments = [PHP_BINARY, __DIR__ . '/../Support/interrupt-run.php', $marker, ...($windows ? ['self-break'] : [])];
-    $process = proc_open($arguments, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, null, $windows ? ['create_new_console' => true] : null);
+    $pipes = [];
+    $process = Child::open($arguments, $pipes, null, null, $windows ? ['create_new_console' => true] : null);
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić podprocesu.');
     }

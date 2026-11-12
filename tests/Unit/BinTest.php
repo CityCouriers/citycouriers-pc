@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use CityCouriers\Pc\Tests\Support\Child;
 use CityCouriers\Pc\Tests\Support\Harness;
 use CityCouriers\Pc\Version;
 
@@ -13,7 +14,8 @@ use CityCouriers\Pc\Version;
 function runBin(string ...$arguments): array
 {
     $command = [PHP_BINARY, __DIR__ . '/../../bin/pc', ...array_values($arguments)];
-    $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    $pipes = [];
+    $process = Child::open($command, $pipes);
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić bin/pc.');
     }

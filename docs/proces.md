@@ -86,4 +86,19 @@ bez `failed` i `skipped`:
   `Tests\Support\PosixShell` (bash z Gita) zamiast gołego `bash`.
 - **`Path` i `PATH`.** PowerShell podaje `Path`; `GitRepo::environment()` nie dopuszcza dwóch kluczy różniących się wielkością liter.
 
+- **stdin procesu potomnego.** Proces bez jawnego stdin dziedziczy terminal. Msys bash (Git for Windows) pod mintty zmienia wtedy
+  stan terminala i urywa bieg Pesta (kod wyjścia 0, brak podsumowania), a w PowerShell i cmd tego nie widać. Każdy proces
+  uruchamiany przez `pc` (`src/Process/EmptyInput`) i przez testy (`Tests\Support\Child`) dostaje pusty stdin; pilnuje tego
+  `tests/Unit/ChildProcessPolicyTest.php` (każdy `proc_open` ma deskryptor 0, brak `shell_exec`/`exec`).
+
+Ręczne sprawdzenie w mintty (Git Bash). Uruchom w oknie Git Bash, nie przez pipe ani narzędzie:
+
+```bash
+php vendor/bin/pest --log-junit /tmp/pest-mintty.xml; echo "exit=$?"
+```
+
+Poprawny wynik: ostatnie linie to `Tests: N passed (…)` i `Duration: …`, potem `exit=0`; plik `/tmp/pest-mintty.xml` ma niezerowy rozmiar
+i w nagłówku `failures="0"`. Objawy błędu: wyjście urwane w środku (przed podsumowaniem), ESC widoczny jako `←[`, a `exit=0` mimo
+braku podsumowania albo pusty plik XML.
+
 Regresje: `tests/Unit/PosixShellTest.php`. Te klasy błędów nie są widoczne w CI na Linuksie.

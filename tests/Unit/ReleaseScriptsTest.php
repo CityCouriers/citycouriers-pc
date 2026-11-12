@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use CityCouriers\Pc\Tests\Support\Child;
 use CityCouriers\Pc\Tests\Support\PosixShell;
 
 /**
@@ -32,7 +33,8 @@ function removeRoot(string $root): void
 function runRelease(string $script, string $root, string $argument): array
 {
     $command = [PosixShell::bash(), __DIR__ . '/../../scripts/ci/' . $script, $argument];
-    $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, PosixShell::environment(['PC_REPO_ROOT' => $root]));
+    $pipes = [];
+    $process = Child::open($command, $pipes, null, PosixShell::environment(['PC_REPO_ROOT' => $root]));
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić skryptu wydania.');
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CityCouriers\Pc\Engine;
 
+use CityCouriers\Pc\Process\EmptyInput;
 use CityCouriers\Pc\Scope\CommitMode;
 use CityCouriers\Pc\Scope\ProcessGitRunner;
 use CityCouriers\Pc\Scope\ScopeResolver;
@@ -13,7 +14,10 @@ use CityCouriers\Pc\Scope\ScopeResolver;
  */
 final readonly class ProcessGit implements Git
 {
-    public function __construct(private string $directory) {}
+    public function __construct(
+        private string $directory,
+        private EmptyInput $input = new EmptyInput(),
+    ) {}
 
     public function isRepository(): bool
     {
@@ -61,7 +65,7 @@ final readonly class ProcessGit implements Git
      */
     private function git(array $arguments): array
     {
-        $process = proc_open(['git', '-C', $this->directory, ...$arguments], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        $process = proc_open(['git', '-C', $this->directory, ...$arguments], [0 => $this->input->descriptor(), 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
         if ($process === false) {
             throw new EngineException('Nie udało się uruchomić gita.');
         }

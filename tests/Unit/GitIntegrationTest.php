@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use CityCouriers\Pc\Tests\Support\Child;
 use CityCouriers\Pc\Application;
 use CityCouriers\Pc\Engine\Checked;
 use CityCouriers\Pc\Engine\CheckedUnit;
@@ -30,7 +31,8 @@ function gitSandbox(): string
 
 function sandboxGit(string $directory, string ...$arguments): string
 {
-    $process = proc_open(['git', '-C', $directory, ...array_values($arguments)], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    $pipes = [];
+    $process = Child::open(['git', '-C', $directory, ...array_values($arguments)], $pipes);
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić gita.');
     }

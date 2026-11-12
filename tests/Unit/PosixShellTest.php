@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use CityCouriers\Pc\Tests\Support\Child;
 use CityCouriers\Pc\Tests\Support\GitRepo;
 use CityCouriers\Pc\Tests\Support\PosixShell;
 
@@ -10,7 +11,8 @@ use CityCouriers\Pc\Tests\Support\PosixShell;
  * `bash` z PATH to wrapper WSL, a `Path` i `PATH` bywają dwiema zmiennymi (CI na Linuksie tego nie złapie).
  */
 it('powłoka testów to bash z Gita na Windows, nie wrapper WSL', function (): void {
-    $process = proc_open([PosixShell::bash(), '-c', 'uname -o'], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, PosixShell::environment());
+    $pipes = [];
+    $process = Child::open([PosixShell::bash(), '-c', 'uname -o'], $pipes, null, PosixShell::environment());
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić bash.');
     }
