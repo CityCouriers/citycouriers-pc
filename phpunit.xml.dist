@@ -7,7 +7,11 @@
          failOnRisky="true"
          failOnSkipped="true"
          failOnIncomplete="true"
-         failOnEmptyTestSuite="true">
+         failOnEmptyTestSuite="true"
+         executionOrder="random"
+         resolveDependencies="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true">
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
