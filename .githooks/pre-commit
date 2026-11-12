@@ -6,7 +6,7 @@
 # (`php bin/pc scope`, reguły w scripts/quality/scope-rules.json, profil local-narrow; docs/bramki.md, „Zakres plików bramki”),
 # ten sam, którego CI używa w profilu enforce-all (pełny zestaw). Commit z samym .md nie uruchamia PHPStan ani testów.
 # Każda niepewność (pusty stage, nieznany plik, nieustalony tryb commita, błąd klasyfikatora, brak php) daje pełny zestaw.
-# PC_HOOK_SCOPE=all wymusza pełny zestaw. Lista bramek musi zgadzać się z regułami (pilnuje tego tests/Unit/Scope).
+# PC_HOOK_SCOPE=all wymusza pełny zestaw. Lista bramek musi zgadzać się z regułami (pilnuje tego tests/Integration/Scope).
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"

@@ -6,11 +6,9 @@ use CityCouriers\Pc\Tests\Support\ScopeSupport;
 use CityCouriers\Pc\Engine\CheckedUnit;
 use CityCouriers\Pc\Engine\GateMode;
 use CityCouriers\Pc\Engine\GateTriggers;
-use CityCouriers\Pc\Engine\ProcessGit;
 use CityCouriers\Pc\Tests\Support\EventLog;
 use CityCouriers\Pc\Tests\Support\FakeGate;
 use CityCouriers\Pc\Tests\Support\FakeGit;
-use CityCouriers\Pc\Tests\Support\GitRepo;
 use CityCouriers\Pc\Tests\Support\Harness;
 
 function scopedGate(string $name, GateTriggers $triggers, EventLog $log): FakeGate
@@ -108,17 +106,3 @@ it('kontrola ujemna: local-narrow nie pomija bramki, gdy zakresu nie da się zaw
     'pełny zakres (bez --staged)' => ['full', new FakeGit(true, ['README.md'], [], false, ['README.md']), []],
     'plik konfiguracji' => ['config', new FakeGit(true, ['phpstan.neon'], [], false, ['phpstan.neon']), ['--staged']],
 ]);
-
-it('prawdziwy git: ProcessGit podaje ścieżki do decyzji o zakresie (suma HEAD i HEAD^) albo null, gdy zakresu nie da się zawęzić', function (): void {
-    $repo = new GitRepo();
-    $repo->history([['README.md' => "r\n"], ['src/Kod.php' => "<?php\n"]]);
-    $repo->write('docs/a.md', "a\n");
-    $repo->stage('docs/a.md');
-    $git = new ProcessGit($repo->path);
-
-    expect($git->scopePaths())->toContain('docs/a.md', 'src/Kod.php');
-
-    $repo->git('reset', '--quiet');
-    expect($git->scopePaths())->toBeNull();
-    $repo->remove();
-});

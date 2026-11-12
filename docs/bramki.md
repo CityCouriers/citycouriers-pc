@@ -262,7 +262,7 @@ nieznana opcja albo literówka (`--amen`) dają tryb **nieznany**. Zwykły commi
 
 Jeśli którekolwiek porównanie jest puste, lista jest pusta, a pusta lista to pełny zestaw. Inwariant: błędne wykrycie
 trybu może tylko **dodać** bramki, nigdy ich ująć. Na Windows (Git for Windows uruchamia hook z `$PPID=1`) sygnału nie ma,
-więc zawsze działa tryb nieznany (szersza, bezpieczna suma). Test na prawdziwym repozytorium git: `tests/Unit/Scope/`.
+więc zawsze działa tryb nieznany (szersza, bezpieczna suma). Test na prawdziwym repozytorium git: `tests/Integration/Scope/`.
 
 ### Profile: logika osobno, polityka osobno
 
@@ -285,7 +285,7 @@ wtedy `OK`; CI uruchamia ją zawsze.
 
 Tabela „plik → bramki” jest spisana niezależnie od reguł w kodzie. Testy ujemne pilnują fail-closed (pusta lista,
 nieznany plik, `docs/x.php`, `README.MD`, ścieżka z `\`, symlink). Test porównuje bramki z hooka z klasyfikatorem
-i wymusza decyzję o każdym nowym pliku w repo bez reguły (`tests/Unit/Scope/`).
+i wymusza decyzję o każdym nowym pliku w repo bez reguły (`tests/Integration/Scope/RepoRulesCoverageTest.php`, klasyfikator: `tests/Unit/Scope/`).
 
 ### Wyzwalacze bramek (obecne w tym repo i propozycje dla planowanych)
 

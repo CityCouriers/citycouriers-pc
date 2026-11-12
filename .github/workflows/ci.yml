@@ -101,18 +101,26 @@ jobs:
           coverage: none
           tools: composer:v2
       - run: composer install --no-interaction --no-progress --prefer-dist
-      - run: composer test
+      # Dwa zestawy (zob. docs/proces.md): Unit (szybkie, bez procesów) i Integration (prawdziwy git, hook, bash, sygnały).
+      - name: Pest, zestaw Unit
+        run: composer test:unit
+      - name: Pest, zestaw Integration
+        run: composer test:integration
       # Losowa kolejność i każdy plik osobno: helper zdefiniowany w jednym pliku, a użyty w innym, wychodzi tutaj,
       # nie u dewelopera (failOnSkipped, failOnWarning i failOnRisky są w phpunit.xml.dist).
-      - name: Pest w losowej kolejności
-        run: vendor/bin/pest --order-by=random
-      - name: Pest, każdy plik osobno
+      - name: Pest w losowej kolejności (Unit, Integration)
+        run: |
+          vendor/bin/pest --testsuite=Unit --order-by=random
+          vendor/bin/pest --testsuite=Integration --order-by=random
+      - name: Pest, każdy plik osobno (Unit, Integration)
         run: |
           set -eu
-          find tests/Unit -name '*Test.php' | sort | while read -r file; do
-            echo "::group::$file"
-            vendor/bin/pest "$file"
-            echo "::endgroup::"
+          for suite in Unit Integration; do
+            find "tests/$suite" -name '*Test.php' | sort | while read -r file; do
+              echo "::group::$suite: $file"
+              vendor/bin/pest "$file"
+              echo "::endgroup::"
+            done
           done
 
   negative-controls:

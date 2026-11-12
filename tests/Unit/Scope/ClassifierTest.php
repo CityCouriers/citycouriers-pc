@@ -130,6 +130,7 @@ it('kontrola ujemna: każda niepewność daje pełny zestaw, pustą listę pomin
     'reguły zakresu (mechanizm)' => [['scripts/quality/scope-rules.json'], false, FullCause::Mechanism],
     'klasyfikator (mechanizm)' => [['src/Scope/Classifier.php'], false, FullCause::Mechanism],
     'test klasyfikatora (mechanizm)' => [['tests/Unit/Scope/ClassifierTest.php'], false, FullCause::Mechanism],
+    'test integracyjny klasyfikatora (mechanizm)' => [['tests/Integration/Scope/HookTest.php'], false, FullCause::Mechanism],
     'skrypt bramek GitHub (mechanizm)' => [['scripts/ci/github-gate.sh'], false, FullCause::Mechanism],
 ]);
 
@@ -151,19 +152,6 @@ it('każda bramka ma opis wyzwalaczy, a każda reguła wskazuje tylko znane bram
     foreach ($rules->rules as $rule) {
         expect(array_diff($rule->gates, $rules->gates))->toBe([]);
     }
-});
-
-it('pliki repo bez reguły to świadomy wyjątek: nowy plik bez reguły wymusza decyzję', function (): void {
-    $repo = realpath(__DIR__ . '/../../..');
-    $files = [];
-    exec('git -C ' . escapeshellarg((string) $repo) . ' ls-files -z', $lines, $code);
-    expect($code)->toBe(0);
-    $files = array_filter(explode("\0", implode("\0", $lines)));
-    // Pliki ze stage'a, które jeszcze nie weszły do HEAD, też muszą mieć regułę (ls-files pokazuje indeks).
-    expect($files)->not->toBe([]);
-    $without = array_values(array_filter($files, static fn(string $file): bool => ScopeSupport::rules()->ruleFor($file) === null));
-
-    expect($without)->toBe([]);
 });
 
 it('zestaw reguł: błędny plik to ScopeException, nigdy ciche pominięcie', function (string $json, string $message): void {

@@ -22,7 +22,7 @@
             "fuse": true,
             "gates": ["privacy"],
             "match": {
-                "prefix": [".githooks/", "src/Scope/", "tests/Unit/Scope/"],
+                "prefix": [".githooks/", "src/Scope/", "tests/Unit/Scope/", "tests/Integration/Scope/"],
                 "exact": ["scripts/quality/scope-rules.json", "scripts/ci/github-gate.sh"]
             }
         },
