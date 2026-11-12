@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace CityCouriers\Pc\Engine;
 
 use CityCouriers\Pc\Process\EmptyInput;
-use CityCouriers\Pc\Scope\CommitMode;
+use CityCouriers\Pc\Scope\Profile;
 use CityCouriers\Pc\Scope\ProcessGitRunner;
+use CityCouriers\Pc\Scope\RuleSetLoader;
+use CityCouriers\Pc\Scope\ScopeCommand;
+use CityCouriers\Pc\Scope\ScopeDecider;
+use CityCouriers\Pc\Scope\ScopeException;
 use CityCouriers\Pc\Scope\ScopeResolver;
 
 /**
@@ -38,12 +42,21 @@ final readonly class ProcessGit implements Git
 
     public function scopePaths(): ?array
     {
-        $input = (new ScopeResolver(new ProcessGitRunner($this->directory)))->staged(CommitMode::Unknown);
-        if ($input->unresolvedReason !== null || $input->specialModes || $input->paths === []) {
+        // Jedna logika klasyfikacji: ten sam `ScopeDecider` i zestaw reguł co w `pc scope` (hook i CI). Pełny zestaw u
+        // klasyfikatora (brak reguły, bezpiecznik, szczególny typ pliku, błąd gita, pusty zakres) albo brak zestawu reguł
+        // to `null`, czyli żadna bramka nie jest pomijana. Bramki mogą zawęzić zakres tylko wtedy, gdy klasyfikator na to pozwolił.
+        try {
+            $rules = (new RuleSetLoader())->load($this->directory . '/' . ScopeCommand::DEFAULT_RULES);
+        } catch (ScopeException) {
+            return null;
+        }
+        $decider = new ScopeDecider(new ScopeResolver(new ProcessGitRunner($this->directory)), environment: ['PC_HOOK_SCOPE' => (string) getenv('PC_HOOK_SCOPE')]);
+        $decision = $decider->decide($rules, Profile::LocalNarrow, null, null);
+        if ($decision->selection->full || $decision->input->paths === []) {
             return null;
         }
 
-        return $input->paths;
+        return $decision->input->paths;
     }
 
     public function resolveCommit(string $revision): ?string

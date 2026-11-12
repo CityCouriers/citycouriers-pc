@@ -278,6 +278,12 @@ Brak profilu albo nieznana nazwa (`--profile=local-narow`, wielkość liter) to 
 a `quality-gate` traktuje `skipped` jako czerwone dla każdego wymaganego jobu. `pc scope --profile=… [--base=<rew>]` drukuje
 nazwy bramek (stdout) i wyjaśnienia (stderr); kody wyjścia 0, 1 (błąd klasyfikatora, hook uruchamia wtedy pełny zestaw), 2 (użycie).
 
+`pc run --staged --profile=local-narrow` korzysta z tego samego klasyfikatora (`ScopeDecider` i `scripts/quality/scope-rules.json`
+repozytorium, tryb commita nieznany, więc suma `HEAD` i `HEAD^`). Gdy klasyfikator daje pełny zestaw (brak reguły dla pliku,
+bezpiecznik, symlink, submoduł, błąd gita, pusty zakres) albo pliku reguł nie ma, silnik nie pomija żadnej bramki. Dopiero
+gdy klasyfikator pozwala zawęzić zakres, bramka może zostać pominięta przez własne wyzwalacze (`GateTriggers`).
+`tests/Integration/Scope/RunScopeParityTest.php` porównuje oba wejścia na prawdziwym repozytorium i indeksie.
+
 Bez Node hook nie uruchamia bramki `process` i mówi to wprost („nie przeskanowano (brak node)”), a podsumowanie nie jest
 wtedy `OK`; CI uruchamia ją zawsze.
 
