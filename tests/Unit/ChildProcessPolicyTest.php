@@ -76,10 +76,10 @@ function childProcessFiles(string $directory): array
     return $files;
 }
 
-it('każdy proc_open w src i tests ma jawny stdin, a testy nie używają shell_exec ani exec', function (): void {
+it('każdy proc_open w src, tests i scripts/mutation ma jawny stdin, a testy nie używają shell_exec ani exec', function (): void {
     $root = dirname(__DIR__, 2);
     $violations = [];
-    foreach ([...childProcessFiles($root . '/src'), ...childProcessFiles($root . '/tests')] as $path) {
+    foreach ([...childProcessFiles($root . '/src'), ...childProcessFiles($root . '/tests'), ...childProcessFiles($root . '/scripts/mutation')] as $path) {
         $isHelper = str_ends_with(str_replace(DIRECTORY_SEPARATOR, '/', $path), 'tests/Support/Child.php');
         $isPolicy = str_ends_with(str_replace(DIRECTORY_SEPARATOR, '/', $path), 'tests/Unit/ChildProcessPolicyTest.php');
         if ($isPolicy) {

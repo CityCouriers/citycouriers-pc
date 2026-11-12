@@ -69,7 +69,16 @@ composer hooks    # włącza hook pre-commit
 composer check    # Pint, PHPStan, PHPMD, testy, kontrole ujemne (zawsze pełny zestaw; hook skraca zakres do typów plików)
 npm test          # testy skryptów procesu (bramka audytu, etykiety, quality-gate)
 composer privacy  # skan ścieżek maszyn i adresów e-mail
+composer mutate   # mutacje Pest Mutate na src: kontrole, manifest i werdykt (wymaga pcov albo xdebug)
 ```
+
+Mutacje uruchamiamy tylko przez `composer mutate` (`scripts/mutation/mutate.php`, opcje: `composer mutate -- --help`).
+Skrypt sam składa polecenie Pesta, przed biegiem sprawdza na zestawie kontrolnym, że mutant bez asercji przeżywa, a mutant
+z asercją ginie (kontrola zerowa i dodatnia), uruchamia pełny zestaw testów pod wrapperem plików wtyczki bez mutacji
+(kontrola tożsamościowa), a po biegu zapisuje manifest `build/mutation/manifest.json` z logiem i dziennikiem. Kod 0
+oznacza bieg kompletny bez żywych mutantów poza rejestrem; każdy inny wynik to kod 1 z powodami. Wtyczka Pest Mutate
+5.0.2 na Windows liczy część mutantów jako zabite, choć proces mutanta nie uruchomił testu, dlatego repo ładuje lokalną
+kopię jej klasy `MutationTest` (`scripts/mutation/patch/`, licencja MIT, strażnik dryfu w testach).
 
 Bramki plików GitHub (hook uruchamia je tylko przy zmianie `.github/**`, `.sh`, `.githooks/**`) wymagają narzędzi lokalnie
 (w CI są instalowane w przypiętych wersjach). Brak narzędzia to głośny błąd z instrukcją. Windows:

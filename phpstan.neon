@@ -3,6 +3,7 @@ parameters:
     paths:
         - bin/pc
         - src
+        - scripts/mutation
         - tests/Unit
         - tests/Integration
         - tests/Support

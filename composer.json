@@ -23,8 +23,13 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "CityCouriers\\Pc\\Tests\\": "tests/"
-        }
+            "CityCouriers\\Pc\\Tests\\": "tests/",
+            "CityCouriers\\Pc\\Dev\\Mutation\\": "scripts/mutation/src/",
+            "CityCouriers\\Pc\\Dev\\MutationControl\\": "scripts/mutation/control/src/"
+        },
+        "files": [
+            "scripts/mutation/patch/autoload.php"
+        ]
     },
     "bin": [
         "bin/pc"
@@ -47,6 +52,10 @@
         ],
         "hooks": "git config core.hooksPath .githooks",
         "lint": "pint --test",
+        "mutate": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php scripts/mutation/mutate.php"
+        ],
         "negative": "bash scripts/ci/negative-controls.sh",
         "privacy": "bash scripts/ci/privacy-scan.sh",
         "smells": "phpmd analyze src --format text --ruleset rulesets/phpmd.xml",
