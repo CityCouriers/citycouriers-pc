@@ -72,3 +72,18 @@ Etykiety, bramka audytu zgłoszeń (`scripts/quality/issue-audit-*.js` i ich tes
 `pr-title` i `Sync GitHub labels` pochodzą z `CityCouriers/wordpress-automation` (MIT, ten sam właściciel praw) przez
 `CityCouriers/cc-google-rating-badge`. Dostosowano listę obszarów, listę jobów i datę startu bramki. Numery `#NNN` w
 komentarzach skopiowanych skryptów oznaczają zgłoszenia i PR z tamtych repozytoriów, a nie z tego.
+
+## Testy w prawdziwej konsoli (Windows)
+
+CI biegnie na Linuksie, a wynik przez pipe (narzędzia, agenci) nie ma konsoli, więc trzy klasy błędów wychodzą dopiero
+w interaktywnej konsoli. Przed oddaniem zmiany w testach procesów, powłoki albo sygnałów uruchom `php vendor/bin/pest`
+w zwykłej konsoli (Windows Terminal z PowerShell, cmd, Git Bash/mintty) i sprawdź, że bieg kończy się linią `Tests: … passed`
+bez `failed` i `skipped`:
+
+- **Zdarzenia konsoli.** `CTRL_C`/`CTRL_BREAK` trafia do wszystkich procesów konsoli, nie do jednego PID. Test sygnału
+  uruchamia podproces we własnej konsoli (`create_new_console`) i nie wysyła zdarzenia do konsoli Pesta, inaczej bieg się urywa.
+- **`bash` z PATH.** W PowerShell i cmd pierwszy `bash` bywa wrapperem WSL (WindowsApps). Testy skryptów używają
+  `Tests\Support\PosixShell` (bash z Gita) zamiast gołego `bash`.
+- **`Path` i `PATH`.** PowerShell podaje `Path`; `GitRepo::environment()` nie dopuszcza dwóch kluczy różniących się wielkością liter.
+
+Regresje: `tests/Unit/PosixShellTest.php`. Te klasy błędów nie są widoczne w CI na Linuksie.

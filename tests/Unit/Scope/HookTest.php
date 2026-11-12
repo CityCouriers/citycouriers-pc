@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use CityCouriers\Pc\Tests\Support\PosixShell;
 use CityCouriers\Pc\Tests\Support\GitRepo;
 use CityCouriers\Pc\Tests\Support\ScopeSupport;
 
@@ -71,7 +72,7 @@ function hookPath(string $fake): string
             return true;
         });
 
-        return implode(PATH_SEPARATOR, [$fake, dirname(PHP_BINARY), ...$clean]);
+        return implode(PATH_SEPARATOR, array_filter([$fake, PosixShell::gitDirectory(), dirname(PHP_BINARY), ...$clean]));
     }
     $tools = $fake . DIRECTORY_SEPARATOR . 'tools';
     mkdir($tools);

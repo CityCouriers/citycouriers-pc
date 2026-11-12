@@ -134,6 +134,12 @@ data " . strlen($content) . "
             }
         }
 
+        // Windows: nazwy zmiennych są bez rozróżniania wielkości liter, a PowerShell i cmd podają `Path`, nie `PATH`.
+        // Gdyby oba klucze trafiły do bloku środowiska, o wyniku decydowałaby kolejność, więc dziedziczone odpowiedniki
+        // zmiennych nadpisanych przez test usuwamy.
+        $overridden = array_map(strtoupper(...), array_keys($this->extraEnvironment));
+        $environment = array_filter($environment, static fn(string $name): bool => !in_array(strtoupper($name), $overridden, true), ARRAY_FILTER_USE_KEY);
+
         return $this->extraEnvironment + $environment + [
             'GIT_AUTHOR_NAME' => 'Test',
             'GIT_AUTHOR_EMAIL' => 'test@example.com',

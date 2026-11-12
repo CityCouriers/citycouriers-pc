@@ -509,22 +509,23 @@ it('SIGTERM daje kod 143', function (): void {
 it('SIGINT w podprocesie: kod 130, finalize wykonane, ostateczny wynik w raporcie', function (): void {
     $marker = (string) tempnam(sys_get_temp_dir(), 'pcsig');
     $windows = PHP_OS_FAMILY === 'Windows';
-    // Windows: podproces we własnej grupie procesów dostaje CTRL_BREAK (obsługuje go sapi_windows_set_ctrl_handler);
-    // POSIX: SIGINT przez pcntl.
-    $process = proc_open([PHP_BINARY, __DIR__ . '/../Support/interrupt-run.php', $marker], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, null, $windows ? ['create_process_group' => true] : null);
+    // POSIX: SIGINT z procesu testowego (pcntl). Windows: zdarzenie CTRL_BREAK nie ma adresata po PID, trafia do
+    // wszystkich procesów konsoli, więc podproces dostaje WŁASNĄ konsolę i sam wysyła je sobie ("self-break").
+    // Test nigdy nie wysyła zdarzenia do konsoli, w której biegnie Pest (zepsułoby tryb konsoli i urwało bieg).
+    $arguments = [PHP_BINARY, __DIR__ . '/../Support/interrupt-run.php', $marker, ...($windows ? ['self-break'] : [])];
+    $process = proc_open($arguments, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, null, $windows ? ['create_new_console' => true] : null);
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić podprocesu.');
     }
 
-    // Czekamy, aż bramka w podprocesie zacznie pracę, i wysyłamy SIGINT.
+    // Czekamy, aż bramka w podprocesie zacznie pracę (na Windows podproces sygnalizuje się sam zaraz po markerze).
     $deadline = microtime(true) + 10;
-    while (microtime(true) < $deadline && file_get_contents($marker) !== 'ready') {
+    // Na Windows podproces sygnalizuje się sam, więc marker może od razu przejść z "ready" do "finalized".
+    while (microtime(true) < $deadline && !in_array(file_get_contents($marker), ['ready', 'finalized'], true)) {
         usleep(20_000);
     }
-    expect(file_get_contents($marker))->toBe('ready');
-    if ($windows) {
-        sapi_windows_generate_ctrl_event(PHP_WINDOWS_EVENT_CTRL_BREAK, (int) (proc_get_status($process)['pid']));
-    } else {
+    expect(file_get_contents($marker))->toBeIn(['ready', 'finalized']);
+    if (!$windows) {
         proc_terminate($process, 2);
     }
 
