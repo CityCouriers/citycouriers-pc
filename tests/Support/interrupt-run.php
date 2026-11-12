@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Podproces testu SIGINT: uruchamia `pc run` z atrapą bramki, która czeka na sygnał. Marker (argument) niesie
+ * Podproces testu SIGINT: uruchamia `pc run` z atrapą bramki, która czeka na sygnał. Marker (argument, zapis atomowy) niesie
  * kolejno "ready" (bramka zaczęła) i "finalized" (faza finalize się wykonała).
  */
 
@@ -21,6 +21,18 @@ use CityCouriers\Pc\Tests\Support\FakeGate;
 
 require __DIR__ . '/../../vendor/autoload.php';
 
+/**
+ * Zapis markera atomowy: plik tymczasowy w tym samym katalogu i `rename`. Czytelnik (test) widzi więc zawsze całą starą
+ * albo całą nową wartość, nigdy mieszaninę (na Windows zwykły `file_put_contents` dawał "readyized").
+ */
+function mark(string $marker, string $value): void
+{
+    $temporary = $marker . '.' . getmypid() . '.tmp';
+    if (file_put_contents($temporary, $value) !== strlen($value) || !rename($temporary, $marker)) {
+        throw new RuntimeException('Nie udało się zapisać markera.');
+    }
+}
+
 $marker = $argv[1];
 $selfBreak = ($argv[2] ?? '') === 'self-break';
 $interrupt = new ProcessInterrupt();
@@ -28,7 +40,7 @@ $log = new EventLog();
 
 $gate = (new FakeGate('format', log: $log))
     ->does(static function () use ($marker, $interrupt, $selfBreak): \CityCouriers\Pc\Engine\GateResult {
-        file_put_contents($marker, 'ready');
+        mark($marker, 'ready');
         // Tryb Windows (własna konsola podprocesu, zob. RunContractTest): zdarzenie CTRL_BREAK do konsoli tego procesu.
         if ($selfBreak && function_exists('sapi_windows_generate_ctrl_event')) {
             sapi_windows_generate_ctrl_event(PHP_WINDOWS_EVENT_CTRL_BREAK, 0);
@@ -41,7 +53,7 @@ $gate = (new FakeGate('format', log: $log))
         return (new ResultFactory())->failed([new Diagnostic('pierwotne')], new Checked(CheckedUnit::Checks, 1));
     })
     ->withFinalize(static function ($context, $result, EndCause $cause) use ($marker): \CityCouriers\Pc\Engine\GateResult {
-        file_put_contents($marker, 'finalized');
+        mark($marker, 'finalized');
 
         return (new ResultFactory())->failed([new Diagnostic('finalize: ' . $cause->value)], new Checked(CheckedUnit::Checks, 1));
     });

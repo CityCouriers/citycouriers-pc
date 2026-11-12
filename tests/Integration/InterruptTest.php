@@ -21,13 +21,18 @@ it('SIGINT w podprocesie: kod 130, finalize wykonane, ostateczny wynik w raporci
         throw new RuntimeException('Nie udało się uruchomić podprocesu.');
     }
 
-    // Czekamy, aż bramka w podprocesie zacznie pracę (na Windows podproces sygnalizuje się sam zaraz po markerze).
+    // Czekamy, aż bramka w podprocesie zacznie pracę. Na Windows podproces sygnalizuje się sam zaraz po markerze, więc
+    // marker może od razu przejść z "ready" do "finalized". Podproces zapisuje marker atomowo (zob. interrupt-run.php),
+    // więc każdy odczyt to cała wartość: pusta (przed pierwszym zapisem), "ready" albo "finalized".
     $deadline = microtime(true) + 10;
-    // Na Windows podproces sygnalizuje się sam, więc marker może od razu przejść z "ready" do "finalized".
-    while (microtime(true) < $deadline && !in_array(file_get_contents($marker), ['ready', 'finalized'], true)) {
+    do {
+        $seen = file_get_contents($marker);
+        if (in_array($seen, ['ready', 'finalized'], true)) {
+            break;
+        }
         usleep(20_000);
-    }
-    expect(file_get_contents($marker))->toBeIn(['ready', 'finalized']);
+    } while (microtime(true) < $deadline);
+    expect($seen)->toBeIn(['ready', 'finalized']);
     if (!$windows) {
         proc_terminate($process, 2);
     }
