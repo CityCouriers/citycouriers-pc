@@ -1,0 +1,19 @@
+{
+    "version": 1,
+    "pliki": {
+        "src/Config/ConfigException.php": "pusta klasa wyjątku (extends RuntimeException {}), bez kodu do mutacji",
+        "src/Engine/CheckedUnit.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Engine/EndCause.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Engine/EngineException.php": "pusta klasa wyjątku (extends RuntimeException {}), bez kodu do mutacji",
+        "src/Engine/GateMode.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Engine/OutputFormat.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Engine/RunScope.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Engine/RunStatus.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Engine/Severity.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Scope/CommitMode.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Scope/FullCause.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Scope/Profile.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Scope/RuleEffect.php": "wyliczenie z samymi przypadkami (wartości napisów), bez metod",
+        "src/Scope/ScopeException.php": "pusta klasa wyjątku (extends RuntimeException {}), bez kodu do mutacji"
+    }
+}

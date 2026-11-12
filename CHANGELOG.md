@@ -22,6 +22,12 @@ Pełny opis: [docs/wydania.md](docs/wydania.md).
 
 ### Added
 
+- Mutacje Pest Mutate w repo (zgłoszenie #60, część 1): `composer mutate` (`scripts/mutation/`) z kontrolą zerową,
+  dodatnią i tożsamościową, manifestem biegu (SHA, wersje, skróty konfiguracji, cele ze skrótami i klasami, wynik każdego
+  mutanta, surowy log) i zasadami uznania biegu (suma kategorii, kompletność po identyfikatorach, timeout i żywe mutanty
+  odrzucają bieg). Lokalna kopia klasy `Pest\Mutate\MutationTest` (MIT, strażnik dryfu) uruchamia proces mutanta przez
+  interpreter PHP i skraca za długi filtr testów: wtyczka 5.0.2 na Windows liczyła mutanty jako zabite bez uruchomienia
+  testu. Narzędzia deweloperskie, bez zmiany SemVer paczki.
 - Silnik bramek (zgłoszenie #3): `pc run` i `pc run --staged` z opcjami `--format=text|json`, `--base=<rewizja>` i `--config=<plik>`. Interfejs `Gate`
   (tryb, bramka wstępna, jednostka `checked`, wyzwalacze, opcjonalna faza `finalize`), runner, rejestr, walidacja wyniku, raport zbiorczy.
   Cztery stany wyniku (`passed`, `failed`, `skipped`, `not_scanned`) z zamkniętym zbiorem kodów powodu, kody wyjścia 0, 1, 2, 3, 4, 5, 130 i 143

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Zestaw kontrolny mutacji (scripts/mutation): kontrola zerowa (Przezycie) i dodatnia (Zabicie). Ścieżki względem tego pliku. -->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="../../../vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="../../../vendor/autoload.php"
+         colors="false"
+         failOnWarning="true"
+         failOnRisky="true"
+         failOnSkipped="true"
+         failOnIncomplete="true"
+         failOnEmptyTestSuite="true"
+         beStrictAboutTestsThatDoNotTestAnything="true"
+         beStrictAboutOutputDuringTests="true">
+    <testsuites>
+        <testsuite name="Kontrola">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
+</phpunit>

@@ -9,10 +9,10 @@
         "schema": ".github/workflows/*.y(a)ml, .github/dependabot.yml, .github/ISSUE_TEMPLATE/config.yml",
         "pinact": ".github/workflows/*.y(a)ml",
         "zizmor": ".github/workflows/*.y(a)ml, .github/dependabot.yml, .github/zizmor.yml, requirements-lint",
-        "lint": ".php, pint.json, composer.json",
-        "stan": ".php, phpstan.neon, composer.json",
+        "lint": ".php, pint.json, composer.json, scripts/mutation/",
+        "stan": ".php, phpstan.neon, composer.json, scripts/mutation/",
         "smells": "src/, bin/pc, rulesets/, composer.json",
-        "test": ".php, tests/Fixtures/, docs/schema/*.json, scripts/ci/*.sh, phpunit.xml.dist, composer.json",
+        "test": ".php, tests/Fixtures/, docs/schema/*.json, scripts/ci/*.sh, scripts/mutation/, phpunit.xml.dist, composer.json",
         "negative": "src/, bin/pc, rulesets/, tests/Fixtures/, scripts/ci/*.sh, pint.json, phpstan.neon, composer.json",
         "process": "scripts/quality/, test/, .github/, package.json"
     },
@@ -60,6 +60,11 @@
             "name": "tests-php",
             "gates": ["privacy", "lint", "stan", "test"],
             "match": { "regex": ["^tests/.*\\.php$"] }
+        },
+        {
+            "name": "mutation-tool",
+            "gates": ["privacy", "lint", "stan", "test"],
+            "match": { "prefix": ["scripts/mutation/"] }
         },
         {
             "name": "ci-shell",
