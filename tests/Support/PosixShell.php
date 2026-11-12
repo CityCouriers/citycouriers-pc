@@ -41,15 +41,16 @@ final class PosixShell
      * (bash uruchomiony bezpośrednio, nie jako powłoka logowania, sam ich nie dodaje). Nazwa `Path` z PowerShella
      * i `PATH` z Git Bash są jedną zmienną, więc zostaje jeden klucz.
      *
-     * @param array<string, string> $extra
+     * @param array<int|string, string> $extra
      *
      * @return array<string, string>
      */
     public static function environment(array $extra = []): array
     {
+        GitRepo::rejectUnpassableNames($extra);
         $environment = [];
         $path = '';
-        foreach ($extra + array_filter(getenv(), is_string(...), ARRAY_FILTER_USE_KEY) as $name => $value) {
+        foreach (array_filter($extra, is_string(...), ARRAY_FILTER_USE_KEY) + array_filter(getenv(), is_string(...), ARRAY_FILTER_USE_KEY) as $name => $value) {
             if (strtoupper($name) === 'PATH') {
                 $path = $path === '' ? $value : $path;
                 continue;

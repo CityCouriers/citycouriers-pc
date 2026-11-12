@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CityCouriers\Pc\Tests\Support;
 
+use InvalidArgumentException;
 use RuntimeException;
 
 /**
@@ -14,7 +15,7 @@ final class GitRepo
 {
     public readonly string $path;
 
-    /** @var array<string, string> dodatkowe zmienne środowiska dla gita (nadpisują odziedziczone) */
+    /** @var array<int|string, string> dodatkowe zmienne środowiska dla gita (nadpisują odziedziczone) */
     public array $extraEnvironment = [];
 
     public function __construct(?string $path = null)
@@ -124,6 +125,8 @@ data " . strlen($content) . "
      */
     public function environment(): array
     {
+        self::rejectUnpassableNames($this->extraEnvironment);
+        $extra = array_filter($this->extraEnvironment, is_string(...), ARRAY_FILTER_USE_KEY);
         $environment = [];
         // PHP zamienia klucz złożony z samych cyfr (np. zmienna `1234`) na int, a `proc_open` takiej zmiennej nie przekaże
         // (Windows: CreateProcess kończy się błędem, Linux: wpis jest ignorowany), więc ją pomijamy.
@@ -139,16 +142,30 @@ data " . strlen($content) . "
         // Windows: nazwy zmiennych są bez rozróżniania wielkości liter, a PowerShell i cmd podają `Path`, nie `PATH`.
         // Gdyby oba klucze trafiły do bloku środowiska, o wyniku decydowałaby kolejność, więc dziedziczone odpowiedniki
         // zmiennych nadpisanych przez test usuwamy.
-        $overridden = array_map(static fn(int|string $name): string => strtoupper((string) $name), array_keys($this->extraEnvironment));
+        $overridden = array_map(static fn(int|string $name): string => strtoupper((string) $name), array_keys($extra));
         $environment = array_filter($environment, static fn(int|string $name): bool => !in_array(strtoupper((string) $name), $overridden, true), ARRAY_FILTER_USE_KEY);
 
-        return $this->extraEnvironment + $environment + [
+        return $extra + $environment + [
             'GIT_AUTHOR_NAME' => 'Test',
             'GIT_AUTHOR_EMAIL' => 'test@example.com',
             'GIT_COMMITTER_NAME' => 'Test',
             'GIT_COMMITTER_EMAIL' => 'test@example.com',
             'GIT_CONFIG_NOSYSTEM' => '1',
         ];
+    }
+
+    /**
+     * Jawnie podana zmienna o nazwie z samych cyfr nie da się przekazać do `proc_open` (klucz int), a podanie jej
+     * z fałszywą nazwą byłoby cichym błędem, więc to błąd konfiguracji testu (fail-closed).
+     *
+     * @param array<int|string, string> $variables
+     */
+    public static function rejectUnpassableNames(array $variables): void
+    {
+        $numeric = array_diff_key($variables, array_filter($variables, is_string(...), ARRAY_FILTER_USE_KEY));
+        if ($numeric !== []) {
+            throw new InvalidArgumentException(sprintf('Zmiennej środowiska o nazwie z samych cyfr (%s) nie da się przekazać do podprocesu.', implode(', ', array_keys($numeric))));
+        }
     }
 
     /**

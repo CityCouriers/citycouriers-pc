@@ -39,6 +39,18 @@ it('środowisko powłoki testów pomija zmienną o nazwie liczbowej', function (
     expect(array_filter(array_keys(PosixShell::environment()), is_int(...)))->toBe([]);
 });
 
+it('jawnie podana zmienna o nazwie liczbowej w GitRepo to błąd konfiguracji', function (): void {
+    $repo = new GitRepo();
+    $repo->extraEnvironment = ['1234' => 'x'];
+
+    expect(static fn(): array => $repo->environment())->toThrow(InvalidArgumentException::class, '1234');
+    $repo->remove();
+});
+
+it('jawnie podana zmienna o nazwie liczbowej w PosixShell::environment to błąd konfiguracji', function (): void {
+    expect(static fn(): array => PosixShell::environment(['1234' => 'x']))->toThrow(InvalidArgumentException::class, '1234');
+});
+
 it('ProcessGitRunner uruchamia git przy zmiennej o nazwie liczbowej', function (): void {
     putenv('1234=x');
     $repo = new GitRepo();
