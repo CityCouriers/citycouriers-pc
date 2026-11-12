@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use CityCouriers\Pc\Tests\Support\ScopeSupport;
-use CityCouriers\Pc\Scope\Classification;
 use CityCouriers\Pc\Scope\Classifier;
 use CityCouriers\Pc\Scope\FullCause;
 use CityCouriers\Pc\Scope\Matcher;
@@ -14,20 +13,12 @@ use CityCouriers\Pc\Scope\ScopeRule;
 
 /**
  * @param list<string> $paths
- */
-function scopeClassify(array $paths, bool $special = false): Classification
-{
-    return (new Classifier(ScopeSupport::rules()))->classify(new ParsedDiff($paths, $special));
-}
-
-/**
- * @param list<string> $paths
  *
  * @return list<string>
  */
 function scopeGates(array $paths): array
 {
-    return scopeClassify($paths)->gates;
+    return ScopeSupport::classify($paths)->gates;
 }
 
 /**
@@ -96,7 +87,7 @@ it('suma bramek dla kilku plików, w kolejności uruchamiania', function (): voi
 });
 
 it('commit z samą dokumentacją pomija ciężkie bramki i mówi dlaczego', function (): void {
-    $result = scopeClassify(['docs/a.md', 'README.md']);
+    $result = ScopeSupport::classify(['docs/a.md', 'README.md']);
 
     expect($result->full)->toBeFalse()
         ->and($result->cause)->toBe(FullCause::None)
@@ -108,7 +99,7 @@ it('commit z samą dokumentacją pomija ciężkie bramki i mówi dlaczego', func
 });
 
 it('kontrola ujemna: każda niepewność daje pełny zestaw, pustą listę pominiętych i powód', function (array $paths, bool $special, FullCause $cause): void {
-    $result = scopeClassify(ScopeSupport::strings($paths), $special);
+    $result = ScopeSupport::classify(ScopeSupport::strings($paths), $special);
 
     expect($result->full)->toBeTrue()
         ->and($result->gates)->toBe(ScopeSupport::rules()->gates)

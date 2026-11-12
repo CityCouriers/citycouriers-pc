@@ -508,7 +508,10 @@ it('SIGTERM daje kod 143', function (): void {
 
 it('SIGINT w podprocesie: kod 130, finalize wykonane, ostateczny wynik w raporcie', function (): void {
     $marker = (string) tempnam(sys_get_temp_dir(), 'pcsig');
-    $process = proc_open([PHP_BINARY, __DIR__ . '/../Support/interrupt-run.php', $marker], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    $windows = PHP_OS_FAMILY === 'Windows';
+    // Windows: podproces we własnej grupie procesów dostaje CTRL_BREAK (obsługuje go sapi_windows_set_ctrl_handler);
+    // POSIX: SIGINT przez pcntl.
+    $process = proc_open([PHP_BINARY, __DIR__ . '/../Support/interrupt-run.php', $marker], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, null, $windows ? ['create_process_group' => true] : null);
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić podprocesu.');
     }
@@ -519,7 +522,11 @@ it('SIGINT w podprocesie: kod 130, finalize wykonane, ostateczny wynik w raporci
         usleep(20_000);
     }
     expect(file_get_contents($marker))->toBe('ready');
-    proc_terminate($process, 2);
+    if ($windows) {
+        sapi_windows_generate_ctrl_event(PHP_WINDOWS_EVENT_CTRL_BREAK, (int) (proc_get_status($process)['pid']));
+    } else {
+        proc_terminate($process, 2);
+    }
 
     $stdout = (string) stream_get_contents($pipes[1]);
     fclose($pipes[1]);
@@ -535,7 +542,7 @@ it('SIGINT w podprocesie: kod 130, finalize wykonane, ostateczny wynik w raporci
         ->and(Harness::at($document, 'gates.0.diagnostics.0.message'))->toBe('finalize: interrupted')
         ->and($finalized)->toBe('finalized')
         ->and(Harness::schemaErrors($document))->toBe([]);
-})->skip(!function_exists('pcntl_signal') || DIRECTORY_SEPARATOR === '\\', 'Wymaga pcntl na systemie typu POSIX.');
+});
 
 it('FakeGit nie jest potrzebny w pełnym biegu: pełny zakres nie dotyka gita', function (): void {
     [$result, $document] = Harness::runJson([contractGate('format')], [], null, new FakeGit(repository: false));

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace CityCouriers\Pc\Tests\Support;
 
+use CityCouriers\Pc\Scope\Classification;
+use CityCouriers\Pc\Scope\Classifier;
+use CityCouriers\Pc\Scope\ParsedDiff;
 use CityCouriers\Pc\Scope\RuleSet;
 use CityCouriers\Pc\Scope\RuleSetLoader;
 
@@ -28,6 +31,14 @@ final class ScopeSupport
     public static function strings(array $values): array
     {
         return array_values(array_filter($values, is_string(...)));
+    }
+
+    /**
+     * @param list<string> $paths
+     */
+    public static function classify(array $paths, bool $special = false): Classification
+    {
+        return (new Classifier(self::rules()))->classify(new ParsedDiff($paths, $special));
     }
 
     public static function root(): string

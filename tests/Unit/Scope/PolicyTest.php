@@ -14,7 +14,7 @@ use CityCouriers\Pc\Scope\ProfileResolver;
  */
 function scopeSelect(array $paths, Profile $profile): CityCouriers\Pc\Scope\Selection
 {
-    return (new EnforcementPolicy())->select(scopeClassify($paths), $profile, ScopeSupport::rules()->gates);
+    return (new EnforcementPolicy())->select(ScopeSupport::classify($paths), $profile, ScopeSupport::rules()->gates);
 }
 
 it('enforce-all: pełny zestaw i pusta lista pominiętych dla README.md, docs/bramki.md, docs/x.php i pustej listy', function (array $paths): void {

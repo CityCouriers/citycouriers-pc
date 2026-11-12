@@ -102,6 +102,18 @@ jobs:
           tools: composer:v2
       - run: composer install --no-interaction --no-progress --prefer-dist
       - run: composer test
+      # Losowa kolejność i każdy plik osobno: helper zdefiniowany w jednym pliku, a użyty w innym, wychodzi tutaj,
+      # nie u dewelopera (failOnSkipped, failOnWarning i failOnRisky są w phpunit.xml.dist).
+      - name: Pest w losowej kolejności
+        run: vendor/bin/pest --order-by=random
+      - name: Pest, każdy plik osobno
+        run: |
+          set -eu
+          find tests/Unit -name '*Test.php' | sort | while read -r file; do
+            echo "::group::$file"
+            vendor/bin/pest "$file"
+            echo "::endgroup::"
+          done
 
   negative-controls:
     name: Kontrole ujemne bramek
