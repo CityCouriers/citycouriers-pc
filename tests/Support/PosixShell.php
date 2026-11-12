@@ -49,7 +49,7 @@ final class PosixShell
     {
         $environment = [];
         $path = '';
-        foreach ($extra + getenv() as $name => $value) {
+        foreach ($extra + array_filter(getenv(), is_string(...), ARRAY_FILTER_USE_KEY) as $name => $value) {
             if (strtoupper($name) === 'PATH') {
                 $path = $path === '' ? $value : $path;
                 continue;

@@ -125,7 +125,9 @@ data " . strlen($content) . "
     public function environment(): array
     {
         $environment = [];
-        foreach (getenv() as $name => $value) {
+        // PHP zamienia klucz złożony z samych cyfr (np. zmienna `1234`) na int, a `proc_open` takiej zmiennej nie przekaże
+        // (Windows: CreateProcess kończy się błędem, Linux: wpis jest ignorowany), więc ją pomijamy.
+        foreach (array_filter(getenv(), is_string(...), ARRAY_FILTER_USE_KEY) as $name => $value) {
             if (self::isolated($name)) {
                 continue;
             }
@@ -137,8 +139,8 @@ data " . strlen($content) . "
         // Windows: nazwy zmiennych są bez rozróżniania wielkości liter, a PowerShell i cmd podają `Path`, nie `PATH`.
         // Gdyby oba klucze trafiły do bloku środowiska, o wyniku decydowałaby kolejność, więc dziedziczone odpowiedniki
         // zmiennych nadpisanych przez test usuwamy.
-        $overridden = array_map(strtoupper(...), array_keys($this->extraEnvironment));
-        $environment = array_filter($environment, static fn(string $name): bool => !in_array(strtoupper($name), $overridden, true), ARRAY_FILTER_USE_KEY);
+        $overridden = array_map(static fn(int|string $name): string => strtoupper((string) $name), array_keys($this->extraEnvironment));
+        $environment = array_filter($environment, static fn(int|string $name): bool => !in_array(strtoupper((string) $name), $overridden, true), ARRAY_FILTER_USE_KEY);
 
         return $this->extraEnvironment + $environment + [
             'GIT_AUTHOR_NAME' => 'Test',
@@ -156,9 +158,10 @@ data " . strlen($content) . "
      */
     public static function scrubProcessEnvironment(): void
     {
-        foreach (array_keys(getenv()) as $name) {
-            if (self::isolated((string) $name) || (str_starts_with((string) $name, 'GIT_') && $name !== 'GIT_EXEC_PATH')) {
-                putenv((string) $name);
+        foreach (array_keys(getenv()) as $key) {
+            $name = (string) $key;
+            if (self::isolated($name) || (str_starts_with($name, 'GIT_') && $name !== 'GIT_EXEC_PATH')) {
+                putenv($name);
             }
         }
     }
