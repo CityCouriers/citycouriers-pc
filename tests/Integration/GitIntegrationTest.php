@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
+use CityCouriers\Pc\Tests\Support\Child;
 use CityCouriers\Pc\Application;
 use CityCouriers\Pc\Engine\Checked;
 use CityCouriers\Pc\Engine\CheckedUnit;
 use CityCouriers\Pc\Engine\GateContext;
 use CityCouriers\Pc\Engine\GateRegistry;
 use CityCouriers\Pc\Engine\GateResult;
-use CityCouriers\Pc\Engine\ProcessGit;
 use CityCouriers\Pc\Engine\ResultFactory;
 use CityCouriers\Pc\Engine\RunCommandFactory;
 use CityCouriers\Pc\Tests\Support\FakeGate;
@@ -31,7 +31,8 @@ function gitSandbox(): string
 
 function sandboxGit(string $directory, string ...$arguments): string
 {
-    $process = proc_open(['git', '-C', $directory, ...array_values($arguments)], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    $pipes = [];
+    $process = Child::open(['git', '-C', $directory, ...array_values($arguments)], $pipes);
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić gita.');
     }
@@ -83,16 +84,20 @@ it('prawdziwy git: --staged przekazuje pliki ze stage\'a, --base daje pełny OID
         ->and(strlen($head))->toBeGreaterThanOrEqual(40)
         ->and($invalid->exitCode)->toBe(2)
         ->and($injection->exitCode)->toBe(2);
-})->skip(fn(): bool => !is_string(shell_exec('git --version 2>&1')) || !str_contains((string) shell_exec('git --version 2>&1'), 'git version'), 'git niedostępny');
+});
 
 it('prawdziwy git: --staged poza repozytorium to kod 2', function (): void {
     $directory = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'pcnogit' . bin2hex(random_bytes(4));
     mkdir($directory);
+    // Sufit wyszukiwania: git nie szuka repozytorium powyżej katalogu testowego (katalog tymczasowy może leżeć w repo).
+    $ceiling = getenv('GIT_CEILING_DIRECTORIES');
+    putenv('GIT_CEILING_DIRECTORIES=' . sys_get_temp_dir());
     $config = Harness::config(['format']);
     $result = (new Application(new RunCommandFactory(registry: new GateRegistry(new FakeGate('format')), root: $directory)))
         ->run(['run', '--staged', '--format=json', '--config=' . $config]);
     unlink($config);
     rmdir($directory);
+    putenv($ceiling === false ? 'GIT_CEILING_DIRECTORIES' : 'GIT_CEILING_DIRECTORIES=' . $ceiling);
 
     expect($result->exitCode)->toBe(2);
-})->skip(fn(): bool => (new ProcessGit(sys_get_temp_dir()))->isRepository(), 'Katalog tymczasowy leży w repozytorium git.');
+});

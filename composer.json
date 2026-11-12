@@ -51,7 +51,12 @@
         "privacy": "bash scripts/ci/privacy-scan.sh",
         "smells": "phpmd analyze src --format text --ruleset rulesets/phpmd.xml",
         "stan": "phpstan analyse --memory-limit=512M --no-progress",
-        "test": "pest"
+        "test": [
+            "@test:unit",
+            "@test:integration"
+        ],
+        "test:integration": "pest --testsuite=Integration",
+        "test:unit": "pest --testsuite=Unit"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

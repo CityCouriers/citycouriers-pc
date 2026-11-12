@@ -5,10 +5,15 @@
          colors="true"
          failOnWarning="true"
          failOnRisky="true"
+         failOnSkipped="true"
+         failOnIncomplete="true"
          failOnEmptyTestSuite="true">
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory>tests/Integration</directory>
         </testsuite>
     </testsuites>
     <source>

@@ -55,6 +55,7 @@ bramki, gdy jest w zakresie i zostało zmienione po starcie, albo gdy recenzent 
 | `schema` | check-jsonschema: workflow, `dependabot.yml`, konfiguracja zgłoszeń |
 | `pinact` | Akcje przypięte do pełnego SHA z komentarzem wersji |
 | `shellcheck` | Skrypty `.sh` i hooki |
+| `scope` | Klasyfikator zakresu w profilu `enforce-all` na pełnej historii (CI niczego nie zawęża) |
 | `process-tests` | Testy skryptów procesu: bramka audytu, etykiety, `quality-gate` |
 | `quality-gate` | Zbiorczo: każdy powyższy job musi mieć wynik `success` |
 
@@ -71,3 +72,56 @@ Etykiety, bramka audytu zgłoszeń (`scripts/quality/issue-audit-*.js` i ich tes
 `pr-title` i `Sync GitHub labels` pochodzą z `CityCouriers/wordpress-automation` (MIT, ten sam właściciel praw) przez
 `CityCouriers/cc-google-rating-badge`. Dostosowano listę obszarów, listę jobów i datę startu bramki. Numery `#NNN` w
 komentarzach skopiowanych skryptów oznaczają zgłoszenia i PR z tamtych repozytoriów, a nie z tego.
+
+## Testy w prawdziwej konsoli (Windows)
+
+CI biegnie na Linuksie, a wynik przez pipe (narzędzia, agenci) nie ma konsoli, więc trzy klasy błędów wychodzą dopiero
+w interaktywnej konsoli. Przed oddaniem zmiany w testach procesów, powłoki albo sygnałów uruchom `php vendor/bin/pest`
+w zwykłej konsoli (Windows Terminal z PowerShell, cmd, Git Bash/mintty) i sprawdź, że bieg kończy się linią `Tests: … passed`
+bez `failed` i `skipped`:
+
+- **Zdarzenia konsoli.** `CTRL_C`/`CTRL_BREAK` trafia do wszystkich procesów konsoli, nie do jednego PID. Test sygnału
+  uruchamia podproces we własnej konsoli (`create_new_console`) i nie wysyła zdarzenia do konsoli Pesta, inaczej bieg się urywa.
+- **`bash` z PATH.** W PowerShell i cmd pierwszy `bash` bywa wrapperem WSL (WindowsApps). Testy skryptów używają
+  `Tests\Support\PosixShell` (bash z Gita) zamiast gołego `bash`.
+- **`Path` i `PATH`.** PowerShell podaje `Path`; `GitRepo::environment()` nie dopuszcza dwóch kluczy różniących się wielkością liter.
+
+- **stdin procesu potomnego.** Proces bez jawnego stdin dziedziczy terminal. Msys bash (Git for Windows) pod mintty zmienia wtedy
+  stan terminala i urywa bieg Pesta (kod wyjścia 0, brak podsumowania), a w PowerShell i cmd tego nie widać. Każdy proces
+  uruchamiany przez `pc` (`src/Process/EmptyInput`) i przez testy (`Tests\Support\Child`) dostaje pusty stdin; pilnuje tego
+  `tests/Unit/ChildProcessPolicyTest.php` (każdy `proc_open` ma deskryptor 0, brak `shell_exec`/`exec`).
+
+Ręczne sprawdzenie w mintty (Git Bash). Uruchom w oknie Git Bash, nie przez pipe ani narzędzie:
+
+```bash
+php vendor/bin/pest --log-junit /tmp/pest-mintty.xml; echo "exit=$?"
+```
+
+Poprawny wynik: ostatnie linie to `Tests: N passed (…)` i `Duration: …`, potem `exit=0`; plik `/tmp/pest-mintty.xml` ma niezerowy rozmiar
+i w nagłówku `failures="0"`. Objawy błędu: wyjście urwane w środku (przed podsumowaniem), ESC widoczny jako `←[`, a `exit=0` mimo
+braku podsumowania albo pusty plik XML.
+
+Regresje: `tests/Integration/PosixShellTest.php`. Te klasy błędów nie są widoczne w CI na Linuksie.
+
+## Testy: Unit i Integration
+
+Testy Pesta są w dwóch zestawach (`phpunit.xml.dist`):
+
+| Zestaw | Katalog | Co tu trafia | Próg |
+| --- | --- | --- | --- |
+| `Unit` | `tests/Unit` | czysta logika w pamięci: bez procesów, bez prawdziwego gita, bez powłoki, bez sygnałów, bez zapisu poza katalogiem tymczasowym | pojedynczy test do ok. 0,3 s; cały zestaw poniżej kilku sekund |
+| `Integration` | `tests/Integration` | wszystko, co tworzy repozytorium git, uruchamia proces (php, bash, `git`), hook, sygnał albo czyta repozytorium | bez progu, ale każdy test zaczyna od prawdziwego procesu |
+
+Test, który przekroczy próg albo uruchamia proces, przenosimy do `tests/Integration` (ten sam podkatalog i te same
+helpery z `tests/Support`). Plik z mieszanką dzielimy: logika zostaje w `Unit`, część procesowa idzie do `Integration`.
+Pomiar: `vendor/bin/pest --testsuite=Unit --log-junit czasy.xml` (atrybut `time` każdego przypadku).
+
+```bash
+composer test:unit          # szybki zestaw Unit
+composer test:integration   # wolny zestaw Integration (prawdziwy git, hook, procesy)
+composer test               # oba zestawy po kolei (to uruchamia hook pre-commit i `composer check`)
+```
+
+CI uruchamia oba zestawy osobnymi krokami (z nazwą zestawu w logu), potem w losowej kolejności i każdy plik osobno.
+Hook `pre-commit` uruchamia `composer test`, czyli oba zestawy: skrócenie go do samego `Unit` osłabiłoby bramkę (hook i klasyfikator
+zakresu mają testy tylko w `Integration`), więc tego nie robimy.

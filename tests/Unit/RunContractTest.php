@@ -504,39 +504,6 @@ it('SIGTERM daje kod 143', function (): void {
     expect($result->exitCode)->toBe(143)->and(Harness::at($document, 'exit_code'))->toBe(143)->and(Harness::at($document, 'error.message'))->toContain('SIGTERM');
 });
 
-// --- rzeczywisty proces ---
-
-it('SIGINT w podprocesie: kod 130, finalize wykonane, ostateczny wynik w raporcie', function (): void {
-    $marker = (string) tempnam(sys_get_temp_dir(), 'pcsig');
-    $process = proc_open([PHP_BINARY, __DIR__ . '/../Support/interrupt-run.php', $marker], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
-    if ($process === false) {
-        throw new RuntimeException('Nie udało się uruchomić podprocesu.');
-    }
-
-    // Czekamy, aż bramka w podprocesie zacznie pracę, i wysyłamy SIGINT.
-    $deadline = microtime(true) + 10;
-    while (microtime(true) < $deadline && file_get_contents($marker) !== 'ready') {
-        usleep(20_000);
-    }
-    expect(file_get_contents($marker))->toBe('ready');
-    proc_terminate($process, 2);
-
-    $stdout = (string) stream_get_contents($pipes[1]);
-    fclose($pipes[1]);
-    fclose($pipes[2]);
-    $exit = proc_close($process);
-    $finalized = file_get_contents($marker);
-    unlink($marker);
-    /** @var array<string, mixed> $document */
-    $document = json_decode($stdout, true, 512, JSON_THROW_ON_ERROR);
-
-    expect($exit)->toBe(130)
-        ->and(Harness::at($document, 'status'))->toBe('interrupted')
-        ->and(Harness::at($document, 'gates.0.diagnostics.0.message'))->toBe('finalize: interrupted')
-        ->and($finalized)->toBe('finalized')
-        ->and(Harness::schemaErrors($document))->toBe([]);
-})->skip(!function_exists('pcntl_signal') || DIRECTORY_SEPARATOR === '\\', 'Wymaga pcntl na systemie typu POSIX.');
-
 it('FakeGit nie jest potrzebny w pełnym biegu: pełny zakres nie dotyka gita', function (): void {
     [$result, $document] = Harness::runJson([contractGate('format')], [], null, new FakeGit(repository: false));
 

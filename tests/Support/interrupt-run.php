@@ -22,12 +22,17 @@ use CityCouriers\Pc\Tests\Support\FakeGate;
 require __DIR__ . '/../../vendor/autoload.php';
 
 $marker = $argv[1];
+$selfBreak = ($argv[2] ?? '') === 'self-break';
 $interrupt = new ProcessInterrupt();
 $log = new EventLog();
 
 $gate = (new FakeGate('format', log: $log))
-    ->does(static function () use ($marker, $interrupt): \CityCouriers\Pc\Engine\GateResult {
+    ->does(static function () use ($marker, $interrupt, $selfBreak): \CityCouriers\Pc\Engine\GateResult {
         file_put_contents($marker, 'ready');
+        // Tryb Windows (własna konsola podprocesu, zob. RunContractTest): zdarzenie CTRL_BREAK do konsoli tego procesu.
+        if ($selfBreak && function_exists('sapi_windows_generate_ctrl_event')) {
+            sapi_windows_generate_ctrl_event(PHP_WINDOWS_EVENT_CTRL_BREAK, 0);
+        }
         $deadline = microtime(true) + 10;
         while ($interrupt->signal() === null && microtime(true) < $deadline) {
             usleep(10_000);

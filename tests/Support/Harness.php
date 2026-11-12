@@ -8,6 +8,7 @@ use CityCouriers\Pc\Application;
 use CityCouriers\Pc\CommandResult;
 use CityCouriers\Pc\Config\ConfigValidator;
 use CityCouriers\Pc\Engine\Gate;
+use CityCouriers\Pc\Engine\Git;
 use CityCouriers\Pc\Engine\GateRegistry;
 use CityCouriers\Pc\Engine\InterruptSignal;
 use CityCouriers\Pc\Engine\NeverInterrupted;
@@ -42,7 +43,7 @@ final class Harness
      *
      * @return array{CommandResult, array<string, mixed>}
      */
-    public static function runJson(array $gates, array $arguments = [], ?array $enabled = null, ?FakeGit $git = null, ?InterruptSignal $interrupt = null): array
+    public static function runJson(array $gates, array $arguments = [], ?array $enabled = null, ?Git $git = null, ?InterruptSignal $interrupt = null): array
     {
         $result = self::run($gates, ['--format=json', ...$arguments], $enabled, $git, $interrupt);
         /** @var array<string, mixed> $document */
@@ -56,7 +57,7 @@ final class Harness
      * @param list<string> $arguments
      * @param list<string>|null $enabled
      */
-    public static function run(array $gates, array $arguments = [], ?array $enabled = null, ?FakeGit $git = null, ?InterruptSignal $interrupt = null): CommandResult
+    public static function run(array $gates, array $arguments = [], ?array $enabled = null, ?Git $git = null, ?InterruptSignal $interrupt = null): CommandResult
     {
         $names = $enabled ?? array_map(static fn(Gate $gate): string => $gate->name(), $gates);
         $config = self::config($names);

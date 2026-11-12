@@ -4,6 +4,7 @@ parameters:
         - bin/pc
         - src
         - tests/Unit
+        - tests/Integration
         - tests/Support
     excludePaths:
         - tests/Fixtures

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace CityCouriers\Pc\Engine;
 
+use CityCouriers\Pc\Scope\ProfileResolver;
+
 /**
  * Parser opcji `pc run`. Błąd użycia to `UsageException` (kod wyjścia 2).
  */
@@ -50,16 +52,20 @@ final class OptionsParser
     private function apply(RunOptions $options, string $argument): RunOptions
     {
         if ($argument === '--staged') {
-            return new RunOptions(RunScope::Staged, $options->format, $options->base, $options->config);
+            return new RunOptions(RunScope::Staged, $options->format, $options->base, $options->config, $options->profile);
         }
         if (str_starts_with($argument, '--format=')) {
-            return new RunOptions($options->scope, $this->format(substr($argument, 9)), $options->base, $options->config);
+            return new RunOptions($options->scope, $this->format(substr($argument, 9)), $options->base, $options->config, $options->profile);
         }
         if (str_starts_with($argument, '--base=')) {
-            return new RunOptions($options->scope, $options->format, $this->nonEmpty('--base', substr($argument, 7)), $options->config);
+            return new RunOptions($options->scope, $options->format, $this->nonEmpty('--base', substr($argument, 7)), $options->config, $options->profile);
         }
         if (str_starts_with($argument, '--config=')) {
-            return new RunOptions($options->scope, $options->format, $options->base, $this->nonEmpty('--config', substr($argument, 9)));
+            return new RunOptions($options->scope, $options->format, $options->base, $this->nonEmpty('--config', substr($argument, 9)), $options->profile);
+        }
+        if (str_starts_with($argument, '--profile=')) {
+            // Nieznana wartość to enforce-all (fail-closed): literówka nie zwęża zakresu.
+            return new RunOptions($options->scope, $options->format, $options->base, $options->config, (new ProfileResolver())->resolve(substr($argument, 10)));
         }
 
         throw new UsageException(sprintf('Nieznana opcja lub argument: %s', $argument));

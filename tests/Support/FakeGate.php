@@ -29,6 +29,8 @@ final class FakeGate implements FinalizingGate
     /** @var (Closure(GateContext, GateResult, EndCause): GateResult)|null */
     private ?Closure $finalize = null;
 
+    private GateTriggers $triggers;
+
     public function __construct(
         private readonly string $name,
         private readonly GateMode $mode = GateMode::Blocking,
@@ -36,6 +38,7 @@ final class FakeGate implements FinalizingGate
         private readonly ?CheckedUnit $unit = CheckedUnit::Checks,
         private readonly EventLog $log = new EventLog(),
     ) {
+        $this->triggers = new GateTriggers();
         $this->run = fn(): GateResult => (new ResultFactory())->passed(new Checked(CheckedUnit::Checks, 1));
     }
 
@@ -94,9 +97,16 @@ final class FakeGate implements FinalizingGate
         return $this->unit;
     }
 
+    public function withTriggers(GateTriggers $triggers): self
+    {
+        $this->triggers = $triggers;
+
+        return $this;
+    }
+
     public function triggers(): GateTriggers
     {
-        return new GateTriggers();
+        return $this->triggers;
     }
 
     public function run(GateContext $context): GateResult

@@ -235,21 +235,63 @@ Zgłoszenie i PR nowej bramki odpowiadają na cztery pytania (pole „Zakres pli
 - **Pominięcie jest widoczne.** Wynik to `SKIPPED (powód)`, nigdy `OK`. Bramka, która pomija po cichu, wygląda jak bramka,
   która sprawdziła (w jednym z naszych repo bramka przez dwa miesiące zwracała OK, nic nie sprawdzając). Bramka sprawdza też, że coś
   faktycznie zrobiła: liczba plików lub testów większa od zera.
-- **Pusty stage to nie brak bramek.** `git commit --amend` bez zmian i podobne przypadki dają pustą listę plików, więc
-  uruchamiamy wszystko. Jest to znany koszt, a doprecyzowanie (różnica `HEAD^` i indeks) to osobne zgłoszenie.
+- **Pusty stage to nie brak bramek.** Pusta lista plików (`--allow-empty`, amend bez zmian) daje **pełny zestaw**; zob. „Pusty stage”.
 - **Mechanizm sam siebie nie zwalnia.** Zmiana hooka, klasyfikatora zakresu i jego testów uruchamia wszystkie bramki.
   Skaner sekretów i skan prywatności biegną zawsze (tanie, a pomyłka jest nieodwracalna).
 - **Wyłączyć można tylko przez konfigurację z uzasadnieniem, nigdy zmienną środowiskową.** `PC_HOOK_SCOPE=all` może tylko
   **rozszerzyć** zakres do pełnego. Nie ma zmiennej, która wyłącza bramkę.
-- **Jedno źródło prawdy.** Jedna klasyfikacja plików dla hooka i CI, bez kopii w kilku miejscach. Dziś (prototyp)
-  żyje w `scripts/quality/hook-scope.js` dla hooka tego repo; silnik `pc` przejmie ją jako wspólny klasyfikator.
+- **Jedno źródło prawdy.** Jedna klasyfikacja plików dla hooka i CI, bez kopii w kilku miejscach. Klasyfikator
+  (`src/Scope/`, reguły w `scripts/quality/scope-rules.json`) jest w silniku `pc`; woła go hook (`pc scope`) i silnik
+  (`pc run --staged --profile=local-narrow`), a CI uruchamia go w profilu `enforce-all`.
 - **Lokalnie i w CI ten sam zestaw testów.** Bramka, której test biegnie tylko w CI, wychodzi dopiero po wypchnięciu.
+
+### Pusty stage
+
+Co hook dostaje do sklasyfikowania, zależy od trybu commita. Tryb wykrywa `CommitModeDetector` z wiersza poleceń procesu
+nadrzędnego (`/proc/<pid>/cmdline` albo `ps`) przez allowlistę: `git [-c k=v | -C ścieżka | --no-pager] commit` z opcjami
+`-m`, `-F`, `-a`, `-q`, `-v`, `-s`, `-n`, `-e`, `--message=`, `--amend`, `--allow-empty` i podobnymi. Alias, pathspec,
+nieznana opcja albo literówka (`--amen`) dają tryb **nieznany**. Zwykły commit wybieramy tylko na dodatni sygnał.
+
+| Stan | Baza porównania |
+| --- | --- |
+| zwykły commit (potwierdzony) | `HEAD` → indeks |
+| amend albo tryb nieznany | suma ścieżek z `HEAD` → indeks i `HEAD^` → indeks (puste drzewo dla korzenia) |
+| pierwszy commit (brak `HEAD`) | puste drzewo (SHA-1 i SHA-256) |
+| merge, cherry-pick, revert, rebase w toku | pełny zestaw |
+| repozytorium płytkie, nieznany format obiektów, błąd gita, niezaufany diff | pełny zestaw |
+
+Jeśli którekolwiek porównanie jest puste, lista jest pusta, a pusta lista to pełny zestaw. Inwariant: błędne wykrycie
+trybu może tylko **dodać** bramki, nigdy ich ująć. Na Windows (Git for Windows uruchamia hook z `$PPID=1`) sygnału nie ma,
+więc zawsze działa tryb nieznany (szersza, bezpieczna suma). Test na prawdziwym repozytorium git: `tests/Integration/Scope/`.
+
+### Profile: logika osobno, polityka osobno
+
+Klasyfikator mówi, które bramki **mógłby** pominąć. Profil decyduje, czy wolno:
+
+| Profil | Zachowanie | Gdzie |
+| --- | --- | --- |
+| `local-narrow` | pomija bramki z powodem (`SKIPPED`, `no_matching_files`) | hook pre-commit, `pc run --staged --profile=local-narrow` |
+| `enforce-all` | zawsze pełny zestaw, lista pominiętych jest tylko informacją | CI (job `scope`), domyślny |
+
+Brak profilu albo nieznana nazwa (`--profile=local-narow`, wielkość liter) to `enforce-all`. CI nie ma filtrów
+`paths`/`paths-ignore` ani warunków `if:` zależnych od zmienionych plików; pilnuje tego `test/ci-enforcement.test.js`,
+a `quality-gate` traktuje `skipped` jako czerwone dla każdego wymaganego jobu. `pc scope --profile=… [--base=<rew>]` drukuje
+nazwy bramek (stdout) i wyjaśnienia (stderr); kody wyjścia 0, 1 (błąd klasyfikatora, hook uruchamia wtedy pełny zestaw), 2 (użycie).
+
+`pc run --staged --profile=local-narrow` korzysta z tego samego klasyfikatora (`ScopeDecider` i `scripts/quality/scope-rules.json`
+repozytorium, tryb commita nieznany, więc suma `HEAD` i `HEAD^`). Gdy klasyfikator daje pełny zestaw (brak reguły dla pliku,
+bezpiecznik, symlink, submoduł, błąd gita, pusty zakres) albo pliku reguł nie ma, silnik nie pomija żadnej bramki. Dopiero
+gdy klasyfikator pozwala zawęzić zakres, bramka może zostać pominięta przez własne wyzwalacze (`GateTriggers`).
+`tests/Integration/Scope/RunScopeParityTest.php` porównuje oba wejścia na prawdziwym repozytorium i indeksie.
+
+Bez Node hook nie uruchamia bramki `process` i mówi to wprost („nie przeskanowano (brak node)”), a podsumowanie nie jest
+wtedy `OK`; CI uruchamia ją zawsze.
 
 ### Test klasyfikatora
 
 Tabela „plik → bramki” jest spisana niezależnie od reguł w kodzie. Testy ujemne pilnują fail-closed (pusta lista,
 nieznany plik, `docs/x.php`, `README.MD`, ścieżka z `\`, symlink). Test porównuje bramki z hooka z klasyfikatorem
-i wymusza decyzję o każdym nowym pliku w repo bez reguły (`test/hook-scope.test.js`).
+i wymusza decyzję o każdym nowym pliku w repo bez reguły (`tests/Integration/Scope/RepoRulesCoverageTest.php`, klasyfikator: `tests/Unit/Scope/`).
 
 ### Wyzwalacze bramek (obecne w tym repo i propozycje dla planowanych)
 

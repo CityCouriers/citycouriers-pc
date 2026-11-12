@@ -14,6 +14,7 @@ final readonly class Runner
         private GateRegistry $registry,
         private GateExecutor $executor,
         private ReportBuilder $reports = new ReportBuilder(),
+        private ScopeGuard $guard = new ScopeGuard(),
     ) {}
 
     /**
@@ -42,6 +43,11 @@ final readonly class Runner
         }
         if ($gate === null) {
             return new Outcome($name, null, $this->executor->notImplemented($name));
+        }
+
+        $outOfScope = $this->guard->skip($gate, $context);
+        if ($outOfScope !== null) {
+            return new Outcome($name, $gate, $outOfScope);
         }
 
         $startedAt = hrtime(true);

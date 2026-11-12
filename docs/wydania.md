@@ -32,7 +32,7 @@ Tag z sufiksem (`v0.1.0-rc.1`) tworzy wydanie oznaczone jako wstępne.
 ## Tag próbny v0.1.0
 
 `v0.1.0` służy do sprawdzenia całego schematu na pustym szkielecie: check-release przechodzi dla poprawnego
-tagu, a dla tagu niespójnego z wersją albo bez wpisu w changelogu kończy się błędem (testy w `tests/Unit/ReleaseScriptsTest.php`).
+tagu, a dla tagu niespójnego z wersją albo bez wpisu w changelogu kończy się błędem (testy w `tests/Integration/ReleaseScriptsTest.php`).
 
 ## Dystrybucja
 

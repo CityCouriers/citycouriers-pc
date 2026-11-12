@@ -8,6 +8,11 @@ use CityCouriers\Pc\Config\ConfigException;
 use CityCouriers\Pc\Config\ConfigLoader;
 use CityCouriers\Pc\Config\ConfigValidator;
 use CityCouriers\Pc\Engine\RunCommandFactory;
+use CityCouriers\Pc\Scope\ProcessCommandLine;
+use CityCouriers\Pc\Scope\ProcessGitRunner;
+use CityCouriers\Pc\Scope\ScopeCommand;
+use CityCouriers\Pc\Scope\ScopeDecider;
+use CityCouriers\Pc\Scope\ScopeResolver;
 
 /**
  * Wejście `pc`: `--version`, `--help`, `config:validate` i `run` (silnik bramek, zob. docs/bramki.md).
@@ -23,7 +28,10 @@ final class Application
 
     public const string DEFAULT_CONFIG = 'pc.json';
 
-    public function __construct(private readonly RunCommandFactory $runCommands = new RunCommandFactory()) {}
+    public function __construct(
+        private readonly RunCommandFactory $runCommands = new RunCommandFactory(),
+        private readonly ?ScopeCommand $scopeCommand = null,
+    ) {}
 
     /**
      * @param list<string> $arguments argumenty bez nazwy skryptu
@@ -37,6 +45,7 @@ final class Application
             '--help', '-h', 'list' => new CommandResult(self::EXIT_OK, $this->help()),
             'config:validate' => $this->validateConfig($arguments[1] ?? self::DEFAULT_CONFIG),
             'run' => $this->runGates(array_slice($arguments, 1)),
+            'scope' => $this->scope(array_slice($arguments, 1)),
             default => new CommandResult(self::EXIT_USAGE, '', sprintf("Nieznane polecenie: %s\n\n", $command) . $this->help()),
         };
     }
@@ -47,6 +56,16 @@ final class Application
     private function runGates(array $arguments): CommandResult
     {
         return $this->runCommands->create()->execute($arguments);
+    }
+
+    /**
+     * @param list<string> $arguments
+     */
+    private function scope(array $arguments): CommandResult
+    {
+        $command = $this->scopeCommand ?? new ScopeCommand(new ScopeDecider(new ScopeResolver(new ProcessGitRunner((string) getcwd())), new ProcessCommandLine(), getenv()));
+
+        return $command->execute($arguments);
     }
 
     private function validateConfig(string $path): CommandResult
@@ -75,6 +94,8 @@ final class Application
             'Polecenia:',
             '  run [opcje]             Uruchamia włączone bramki. Opcje: --staged, --format=text|json,',
             '                          --base=<rewizja>, --config=<plik>. Kody wyjścia: docs/bramki.md.',
+            '  scope [opcje]           Które bramki uruchomić dla zmienionych plików (hook, CI). Opcje: --profile=local-narrow|enforce-all,',
+            '                          --rules=<plik>, --parent-pid=<pid>, --base=<rewizja>. Zob. docs/bramki.md.',
             '  config:validate [plik]  Sprawdza plik konfiguracji konsumenta (domyślnie pc.json).',
             '  --version, -V           Wypisuje wersję.',
             '  --help, -h, list        Wypisuje tę pomoc.',

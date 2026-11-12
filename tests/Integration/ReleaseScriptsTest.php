@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use CityCouriers\Pc\Tests\Support\Child;
+use CityCouriers\Pc\Tests\Support\PosixShell;
+
 /**
  * Tworzy tymczasowy korzeń repo z wersją i changelogiem.
  */
@@ -29,8 +32,9 @@ function removeRoot(string $root): void
  */
 function runRelease(string $script, string $root, string $argument): array
 {
-    $command = ['bash', __DIR__ . '/../../scripts/ci/' . $script, $argument];
-    $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, null, ['PC_REPO_ROOT' => $root] + getenv());
+    $command = [PosixShell::bash(), __DIR__ . '/../../scripts/ci/' . $script, $argument];
+    $pipes = [];
+    $process = Child::open($command, $pipes, null, PosixShell::environment(['PC_REPO_ROOT' => $root]));
     if ($process === false) {
         throw new RuntimeException('Nie udało się uruchomić skryptu wydania.');
     }

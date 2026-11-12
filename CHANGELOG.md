@@ -34,9 +34,11 @@ Pełny opis: [docs/wydania.md](docs/wydania.md).
   `scripts/ci/github-gate.sh` dla hooka i CI, kontrola ujemna każdego narzędzia (`tests/Fixtures/negative-github/`),
   binarki w CI z sumą SHA-256, paczki Pythona z hashami (`scripts/ci/requirements-lint.txt`). Wpięte w `quality-gate`
   i w klasyfikator zakresu hooka.
-- Zakres bramek hooka pre-commit (`scripts/quality/hook-scope.js`): commit z samą dokumentacją nie uruchamia PHPStan, PHPMD
-  ani testów. Allowlista zwolnień, fail-closed, widoczna lista pominiętych, `PC_HOOK_SCOPE=all`. Zasady i wyzwalacze
-  bramek: `docs/bramki.md`.
+- Zakres plików bramek (#40): wspólny klasyfikator w silniku (`src/Scope/`, reguły `scripts/quality/scope-rules.json`)
+  zastępuje prototyp `hook-scope.js`. Fail-closed (pusta lista, brak reguły, dziwna ścieżka, symlink, submoduł, zmiana
+  mechanizmu dają pełny zestaw), jawny tryb commita i baza porównania (zwykły, amend, pierwszy commit, merge i spółka),
+  profile `local-narrow` i `enforce-all`, polecenie `pc scope`, opcja `pc run --profile=`, job CI `scope`,
+  `test/ci-enforcement.test.js`. Hook bez Node jawnie nie skanuje bramki `process`. Opis: `docs/bramki.md` („Pusty stage”).
 - Proces repozytorium jak w pozostałych repo CityCouriers: etykiety `P0`-`P4`, `T1`-`T3`, `area:*` (`.github/labels.json`,
   workflow `Sync GitHub labels`), triage i bramka audytu zgłoszeń (`issue-audit`), `pr-title`, szablony zgłoszeń i PR,
   job zbiorczy `quality-gate` (zastępuje `ci-gate`), gitleaks z przypiętą wersją i sumą SHA-256, testy skryptów procesu
