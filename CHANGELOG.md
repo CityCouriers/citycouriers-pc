@@ -10,6 +10,7 @@ Pełny opis: [docs/wydania.md](docs/wydania.md).
 
 - Repozytorium nazywa się `pc` (wcześniej `citycouriers-pc`), zgodnie z konwencją krótkich nazw repozytoriów CityCouriers. Nazwa pakietu Composera (`citycouriers/pc`) bez zmian. Stary adres przekierowuje.
 - Start bramki audytu zgłoszeń: 2026-11-08T00:00:00Z.
+- Testy: Pest 4 → 5 (PHPUnit 13) i zaostrzony `phpunit.xml.dist`: `executionOrder="random"`, `resolveDependencies`, `beStrictAboutTestsThatDoNotTestAnything`, `beStrictAboutOutputDuringTests` (obok dotychczasowych `failOn*`). Zmiana dotyczy tylko zależności deweloperskich, bez zmiany SemVer paczki (zgłoszenie #53).
 
 ### Fixed
 
