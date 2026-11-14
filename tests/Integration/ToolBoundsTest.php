@@ -55,7 +55,7 @@ it('dolna granica niższa niż zainstalowana wersja daje kod 1 i wskazuje pakiet
     );
 
     expect($exit)->toBe(1)
-        ->and($output)->toContain('pestphp/pest: dolna granica 5.3.5 < najnowsza stabilna 5.3.6')
+        ->and($output)->toContain('pestphp/pest: dolna granica 5.3.5 różna od najnowszej stabilnej 5.3.6')
         ->and($output)->not->toContain('laravel/pint');
 });
 
@@ -68,7 +68,7 @@ it('dolna granica równa najnowszej stabilnej i zainstalowana wersja dają kod 0
 it('zainstalowana wersja starsza od najnowszej stabilnej daje kod 1', function (): void {
     [$exit, $output] = runBounds(['pestphp/pest' => '^5.3.6'], ['pestphp/pest' => 'v5.3.5'], ['pestphp/pest' => '5.3.6']);
 
-    expect($exit)->toBe(1)->and($output)->toContain('pestphp/pest: zainstalowana 5.3.5 < najnowsza stabilna 5.3.6');
+    expect($exit)->toBe(1)->and($output)->toContain('pestphp/pest: zainstalowana 5.3.5 różna od najnowszej stabilnej 5.3.6');
 });
 
 it('wersja deweloperska bez wpisu wyjątku daje kod 1, z wpisem 0', function (): void {
@@ -80,7 +80,7 @@ it('wersja deweloperska bez wpisu wyjątku daje kod 1, z wpisem 0', function ():
     [$withException] = runBounds($require, $installed, $latest, ['phpmd/phpmd' => 'powód']);
 
     expect($withoutException)->toBe(1)
-        ->and($output)->toContain('phpmd/phpmd: ograniczenie "3.x-dev" bez dolnej granicy')
+        ->and($output)->toContain('phpmd/phpmd: ograniczenie "3.x-dev" bez pewnej dolnej granicy')
         ->and($withException)->toBe(0);
 });
 
@@ -93,7 +93,7 @@ it('pusty powód wyjątku nie zwalnia pakietu', function (): void {
 it('alternatywa w ograniczeniu liczy się po najniższej dolnej granicy', function (): void {
     [$exit, $output] = runBounds(['a/b' => '^1.2 || ^2.0'], ['a/b' => '2.0.0'], ['a/b' => '2.0.0']);
 
-    expect($exit)->toBe(1)->and($output)->toContain('dolna granica 1.2.0 < najnowsza stabilna 2.0.0');
+    expect($exit)->toBe(1)->and($output)->toContain('dolna granica 1.2.0 różna od najnowszej stabilnej 2.0.0');
 });
 
 it('brak najnowszej stabilnej wersji bez wyjątku daje kod 1', function (): void {
@@ -101,3 +101,27 @@ it('brak najnowszej stabilnej wersji bez wyjątku daje kod 1', function (): void
 
     expect($exit)->toBe(1)->and($output)->toContain('a/b: brak najnowszej stabilnej wersji');
 });
+
+it('wersja wstępna w ograniczeniu i zainstalowana, przy starszej stabilnej, daje kod 1', function (): void {
+    [$exit, $output] = runBounds(['a/b' => '^6.0.0-beta1'], ['a/b' => '6.0.0-beta1'], ['a/b' => '5.3.5']);
+
+    expect($exit)->toBe(1)->and($output)->toContain('a/b: ograniczenie "^6.0.0-beta1" bez pewnej dolnej granicy');
+});
+
+it('dolna granica wyższa niż najnowsza stabilna daje kod 1', function (): void {
+    [$exit, $output] = runBounds(['a/b' => '^6.0'], ['a/b' => '6.0.0'], ['a/b' => '5.3.5']);
+
+    expect($exit)->toBe(1)->and($output)->toContain('a/b: dolna granica 6.0.0 różna od najnowszej stabilnej 5.3.5');
+});
+
+it('niestabilna zainstalowana wersja przy poprawnej dolnej granicy daje kod 1', function (): void {
+    [$exit, $output] = runBounds(['a/b' => '^5.3.5'], ['a/b' => '5.3.5-RC1'], ['a/b' => '5.3.5']);
+
+    expect($exit)->toBe(1)->and($output)->toContain('a/b: zainstalowana 5.3.5-RC1 różna od najnowszej stabilnej 5.3.5 (albo niestabilna)');
+});
+
+it('ograniczenie z górną granicą, wieloczłonowe albo gwiazdka to nieobsługiwana składnia (kod 1)', function (string $constraint): void {
+    [$exit, $output] = runBounds(['a/b' => $constraint], ['a/b' => '5.3.5'], ['a/b' => '5.3.5']);
+
+    expect($exit)->toBe(1)->and($output)->toContain('a/b: ograniczenie "' . $constraint . '" bez pewnej dolnej granicy');
+})->with(['>=5.3.5 <6.0', '>=5.3.5,<6.0', '5.*', '*', '^5.3.5@dev']);
