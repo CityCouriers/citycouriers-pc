@@ -1,40 +1,16 @@
+# Tylko GitHub Actions jest automatyczne. Composer i npm aktualizujemy świadomie ręcznie, w sobotę, jednym PR-em na cykl
+# (docs/proces.md, sekcja "Aktualizacja narzędzi"), żeby Dependabot nie otwierał równoległych PR-ów na te same wersje.
 version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-      day: monday
+      day: saturday
     commit-message:
       prefix: "ci"
     groups:
       github-actions:
         patterns: ["*"]
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: composer
-    directory: /
-    schedule:
-      interval: weekly
-      day: monday
-    commit-message:
-      prefix: "chore"
-    groups:
-      dev-dependencies:
-        dependency-type: development
-    cooldown:
-      default-days: 7
-
-  - package-ecosystem: npm
-    directory: /
-    schedule:
-      interval: weekly
-      day: monday
-    commit-message:
-      prefix: "chore"
-    groups:
-      dev-dependencies:
-        dependency-type: development
     cooldown:
       default-days: 7

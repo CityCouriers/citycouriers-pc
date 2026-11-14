@@ -67,6 +67,11 @@
             "match": { "regex": ["^scripts/ci/[^/]+\\.sh$"] }
         },
         {
+            "name": "ci-php",
+            "gates": ["privacy", "lint", "test"],
+            "match": { "regex": ["^scripts/ci/[^/]+\\.php$"], "exact": ["scripts/ci/tool-bounds-exceptions.json"] }
+        },
+        {
             "name": "lint-requirements",
             "gates": ["privacy", "yamllint", "schema", "zizmor"],
             "match": { "regex": ["^scripts/ci/requirements-lint\\.(in|txt)$"] }
