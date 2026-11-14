@@ -10,11 +10,11 @@
         "ext-json": "*"
     },
     "require-dev": {
-        "laravel/pint": "^1.24",
-        "pdepend/pdepend": "3.x-dev",
-        "pestphp/pest": "^5.0",
-        "phpmd/phpmd": "3.x-dev",
-        "phpstan/phpstan": "^2.1"
+        "laravel/pint": "^1.32.3",
+        "pdepend/pdepend": "^3.1.0",
+        "pestphp/pest": "^5.3.5",
+        "phpmd/phpmd": "^3.0.0",
+        "phpstan/phpstan": "^2.3.5"
     },
     "autoload": {
         "psr-4": {
@@ -38,6 +38,7 @@
         "sort-packages": true
     },
     "scripts": {
+        "bounds": "php scripts/ci/tool-bounds.php",
         "check": [
             "@lint",
             "@stan",

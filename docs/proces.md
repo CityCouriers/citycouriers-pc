@@ -62,6 +62,64 @@ bramki, gdy jest w zakresie i zostało zmienione po starcie, albo gdy recenzent 
 Nowy job kontrolny dopisujemy do `needs` w `quality-gate` i do `scripts/quality/quality-gate.js`; test
 `test/quality-gate.test.js` pilnuje zgodności z `ci.yml`.
 
+## Aktualizacja narzędzi
+
+Narzędzia deweloperskie (`require-dev`) są w **najnowszych wydanych wersjach stabilnych**. Wyjątki są dozwolone, ale każdy jest
+jawnie uzasadniony. W dokumentacji i zgłoszeniach nie wpisujemy numerów wersji (zmieniają się co tydzień): źródłem prawdy są
+`composer.json` i wynik `composer outdated`.
+
+### Rytm
+
+- **Composer i npm: ręcznie, w każdą sobotę, jednym PR-em na cykl.** Dependabot dla tych ekosystemów jest wyłączony (otwierałby
+  równolegle własne PR-y na te same wersje, a każdy uruchamiałby pełne CI).
+- **GitHub Actions: automatycznie przez Dependabota**, raz w tygodniu w sobotę (`.github/dependabot.yml`: grupa minor i patch,
+  etykieta `dependencies`, limit otwartych PR, `cooldown` 7 dni; cooldown zostaje, bo audyt `dependabot-cooldown` w `zizmor`
+  zgłasza jego brak). Tygodniowy rytm nie kosztuje, bo `pc` jest publiczne i minuty CI są darmowe.
+
+### Wykonawca
+
+Cykl prowadzi rola **opiekun narzędzi** (rola, nie osoba). Rolę wskazuje właściciel repozytorium; zastępstwo i przekazanie roli
+to komentarz w stałym zgłoszeniu cyklu („Aktualizacja narzędzi”) z nazwą przejmującego, a do czasu takiego wpisu rolę pełni właściciel.
+
+### Procedura cyklu
+
+1. **Stan wyjściowy:** czysty `main`, zielone bramki, spis otwartych alertów bezpieczeństwa.
+2. **Alerty:** alerty Dependabota, `composer audit` i `npm audit`.
+3. **Przegląd wersji:** `composer outdated --direct` i `npm outdated`. Dla każdej bezpośredniej zależności dev dwa warunki:
+   zainstalowana wersja jest najnowszą stabilną **oraz** dolna granica w `composer.json` jest równa najnowszej stabilnej
+   (`composer outdated` pokazuje tylko pierwszy warunek). Warunek sprawdza skrypt `composer bounds`
+   (`scripts/ci/tool-bounds.php`, pobiera najnowsze stabilne z Packagist): kod niezerowy i wskazanie pakietu, gdy któraś wartość jest
+   niższa, a pakiet nie ma wpisu w `scripts/ci/tool-bounds-exceptions.json` (pakiet => powód; pusty powód nie zwalnia).
+   Wynik to tabela (pakiet, najnowsza stabilna, zainstalowana, dolna granica, docelowe minimum, wyjątek) w opisie PR.
+4. **Minima** w `composer.json` podnosimy do najnowszej stabilnej, potem `composer update`.
+5. **Jeden PR na cykl** z wszystkimi aktualizacjami, w **Draft** do zielonych bramek lokalnych (`composer check` i bramki hooka).
+6. **Czerwony build nie osłabia bramek:** nie luzujemy reguł, progów ani testów, żeby przepuścić aktualizację. Naprawiamy kod albo
+   odkładamy pakiet z opisem w PR.
+7. **Narzędzie zmieniające wyniki bramek** (Pint, PHPStan, PHPMD): w opisie PR wynik bramki przed i po aktualizacji.
+8. **Wersje wstępne i deweloperskie** (`*-dev`, alpha, beta, RC) tylko z wpisem wyjątku i uzasadnieniem w opisie PR: dlaczego nie
+   stabilna i kiedy wracamy do stabilnej.
+9. **Ślad:** w stałym zgłoszeniu cyklu **w każdym tygodniu**, także gdy nic się nie zmieniło, komentarz z datą, wynikiem
+   `composer outdated --direct`, `npm outdated` (brak pakietów zapisujemy jawnie: „brak pakietów do aktualizacji”), tabelą dolnych
+   granic i decyzją („zaktualizowano: PR …” albo „bez aktualizacji: powód”). PR cyklu dołącza do zgłoszenia przez `Refs`, bez zamykania.
+   Pominięty tydzień niczego nie kumuluje: następny cykl zaczyna od stanu bieżącego.
+
+### Ścieżka pilna
+
+Alert o ważności HIGH lub CRITICAL nie czeka na sobotę: idzie osobnym, szybkim PR-em z tą samą zasadą braku luzowania bramek.
+W stałym zgłoszeniu cyklu zostaje wzmianka (`Refs`).
+
+### Wyjątki
+
+Wpis w `scripts/ci/tool-bounds-exceptions.json` jest dozwolony tylko z powodem (np. brak wydania stabilnego, niezgodność z
+wymaganiem PHP paczki) i jest powtórnie oceniany w każdym cyklu. Powód trafia też do opisu PR. Zasada ogólna dla narzędzia
+`phpcpd` (zgłoszenie bramki duplikatów): tylko narzędzie **utrzymywane** w wersji **stabilnej**; pakiety oznaczone na Packagist
+jako porzucone nie wchodzą, chyba że z uzasadnionym wyjątkiem.
+
+### Wykrycie pominięcia cyklu
+
+Zaplanowany workflow poniedziałkowy, który sprawdza ślad z ostatnich 8 dni w stałym zgłoszeniu cyklu, jest osobną zmianą
+(kontrola ujemna w jego testach); do czasu jego wdrożenia pominięcie wykrywa opiekun narzędzi przy poniedziałkowym przeglądzie zgłoszeń.
+
 ## Wydania
 
 Schemat SemVer dla bramek i proces wydania: [wydania.md](wydania.md).
